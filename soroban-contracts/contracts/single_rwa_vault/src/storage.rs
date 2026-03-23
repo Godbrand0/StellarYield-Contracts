@@ -91,6 +91,9 @@ pub enum DataKey {
     // --- Early redemption ---
     RedemptionCounter,
     RedemptionRequest(u32),
+
+    // --- Blacklist ---
+    Blacklisted(Address),
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
