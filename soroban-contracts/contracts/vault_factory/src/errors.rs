@@ -14,4 +14,6 @@ pub enum Error {
     NotSupported       = 5,
     /// Invalid initialization parameters provided.
     InvalidInitParams  = 6,
+    /// Batch size exceeds the maximum allowed limit.
+    BatchTooLarge      = 7,
 }

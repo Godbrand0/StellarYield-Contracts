@@ -23,6 +23,11 @@ use crate::errors::Error;
 use crate::events::*;
 use single_rwa_vault;
 
+/// Maximum number of vaults that can be created in a single batch call.
+/// Contract deployment is one of the most expensive Soroban operations;
+/// exceeding this limit risks exhausting the transaction's CPU budget.
+const MAX_BATCH_SIZE: u32 = 10;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Contract
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,6 +133,9 @@ impl VaultFactory {
     }
 
     /// Batch-create multiple vaults in one transaction.
+    ///
+    /// The batch size is capped at `MAX_BATCH_SIZE` (10) to prevent gas
+    /// exhaustion from unbounded contract deployments.
     pub fn batch_create_vaults(
         e: &Env,
         caller: Address,
@@ -135,6 +143,10 @@ impl VaultFactory {
     ) -> Vec<Address> {
         caller.require_auth();
         require_operator_or_admin(e, &caller);
+
+        if params.len() > MAX_BATCH_SIZE {
+            panic_with_error!(e, Error::BatchTooLarge);
+        }
 
         let mut vaults: Vec<Address> = Vec::new(e);
         for i in 0..params.len() {

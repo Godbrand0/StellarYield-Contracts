@@ -406,3 +406,94 @@ fn test_remove_vault_emits_event() {
     let expected = soroban_sdk::symbol_short!("v_remove");
     assert_eq!(first_symbol, expected);
 }
+
+// ─── batch_create_vaults size limit ──────────────────────────────────────────
+
+/// batch_create_vaults with more than MAX_BATCH_SIZE (10) entries must panic
+/// with Error::BatchTooLarge (#7).
+#[test]
+#[should_panic(expected = "Error(Contract, #7)")]
+fn test_batch_create_vaults_exceeds_limit() {
+    let e = Env::default();
+    e.mock_all_auths();
+
+    let (client, admin) = setup_factory(&e);
+    let asset = Address::generate(&e);
+
+    // Build a batch of 11 entries (one over the limit).
+    let mut params: soroban_sdk::Vec<crate::types::BatchVaultParams> = soroban_sdk::Vec::new(&e);
+    for i in 0..11u32 {
+        params.push_back(crate::types::BatchVaultParams {
+            asset: asset.clone(),
+            name: String::from_str(&e, "V"),
+            symbol: String::from_str(&e, "V"),
+            rwa_name: String::from_str(&e, "RWA"),
+            rwa_symbol: String::from_str(&e, "R"),
+            rwa_document_uri: String::from_str(&e, "https://example.com"),
+            rwa_category: String::from_str(&e, "Bond"),
+            expected_apy: 500,
+            maturity_date: 9_999_999_999u64 + i as u64,
+            funding_deadline: 0,
+            funding_target: 0,
+            min_deposit: 0,
+            max_deposit_per_user: 0,
+            early_redemption_fee_bps: 200,
+        });
+    }
+
+    // Must panic with BatchTooLarge.
+    client.batch_create_vaults(&admin, &params);
+}
+
+/// batch_create_vaults at exactly MAX_BATCH_SIZE (10) should not panic
+/// (the limit is inclusive).
+#[test]
+fn test_batch_create_vaults_at_limit_ok() {
+    let e = Env::default();
+    e.mock_all_auths();
+
+    let (client, admin) = setup_factory(&e);
+    let asset = Address::generate(&e);
+
+    let mut params: soroban_sdk::Vec<crate::types::BatchVaultParams> = soroban_sdk::Vec::new(&e);
+    for i in 0..10u32 {
+        params.push_back(crate::types::BatchVaultParams {
+            asset: asset.clone(),
+            name: String::from_str(&e, "V"),
+            symbol: String::from_str(&e, "V"),
+            rwa_name: String::from_str(&e, "RWA"),
+            rwa_symbol: String::from_str(&e, "R"),
+            rwa_document_uri: String::from_str(&e, "https://example.com"),
+            rwa_category: String::from_str(&e, "Bond"),
+            expected_apy: 500,
+            maturity_date: 9_999_999_999u64 + i as u64,
+            funding_deadline: 0,
+            funding_target: 0,
+            min_deposit: 0,
+            max_deposit_per_user: 0,
+            early_redemption_fee_bps: 200,
+        });
+    }
+
+    // Should not panic -- exactly at the limit.
+    // Note: actual deployment will fail because we use a dummy WASM hash,
+    // but the size check passes before deployment starts.
+    // We test only the guard here, not full deployment.
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        client.batch_create_vaults(&admin, &params);
+    }));
+    // The call may still panic due to dummy WASM hash, but NOT with BatchTooLarge (#7).
+    if let Err(e) = result {
+        let msg = if let Some(s) = e.downcast_ref::<std::string::String>() {
+            s.clone()
+        } else if let Some(s) = e.downcast_ref::<&str>() {
+            std::string::String::from(*s)
+        } else {
+            std::string::String::from("")
+        };
+        assert!(
+            !msg.contains("#7"),
+            "batch of 10 should not trigger BatchTooLarge"
+        );
+    }
+}
