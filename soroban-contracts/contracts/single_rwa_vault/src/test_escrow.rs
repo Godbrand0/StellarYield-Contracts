@@ -27,6 +27,7 @@ fn test_early_redemption_escrow_and_transfer_lock() {
     v.deposit(&ctx.user, &deposit_amount, &ctx.user);
 
     // 2. Activate vault
+    v.set_funding_target(&ctx.admin, &0i128);
     v.activate_vault(&ctx.operator);
 
     let initial_balance = v.balance(&ctx.user);
@@ -60,6 +61,7 @@ fn test_early_redemption_process_burns_from_escrow() {
     let deposit_amount = 10_000_000i128;
     fund_and_approve(&ctx, &ctx.user, deposit_amount);
     v.deposit(&ctx.user, &deposit_amount, &ctx.user);
+    v.set_funding_target(&ctx.admin, &0i128);
     v.activate_vault(&ctx.operator);
 
     let request_shares = 10_000_000i128;
@@ -90,6 +92,7 @@ fn test_cannot_cancel_twice() {
 
     fund_and_approve(&ctx, &ctx.user, 10_000_000);
     v.deposit(&ctx.user, &10_000_000i128, &ctx.user);
+    v.set_funding_target(&ctx.admin, &0i128);
     v.activate_vault(&ctx.operator);
 
     let request_id = v.request_early_redemption(&ctx.user, &5_000_000);
@@ -106,6 +109,7 @@ fn test_cannot_process_cancelled() {
 
     fund_and_approve(&ctx, &ctx.user, 10_000_000);
     v.deposit(&ctx.user, &10_000_000i128, &ctx.user);
+    v.set_funding_target(&ctx.admin, &0i128);
     v.activate_vault(&ctx.operator);
 
     let request_id = v.request_early_redemption(&ctx.user, &5_000_000);

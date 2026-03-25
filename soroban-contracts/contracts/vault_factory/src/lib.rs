@@ -447,12 +447,15 @@ impl VaultFactory {
         let mut salt_bytes = soroban_sdk::Bytes::new(e);
         salt_bytes.append(&soroban_sdk::Bytes::from_slice(e, &counter.to_be_bytes()));
         salt_bytes.append(&name.clone().to_xdr(e));
-        salt_bytes.append(&soroban_sdk::Bytes::from_slice(e, &e.ledger().timestamp().to_be_bytes()));
+        salt_bytes.append(&soroban_sdk::Bytes::from_slice(
+            e,
+            &e.ledger().timestamp().to_be_bytes(),
+        ));
         let salt = e.crypto().sha256(&salt_bytes);
 
         // Build the InitParams struct for the vault constructor.
         // Using a struct keeps us under Soroban's 10-arg limit per function.
-        let init_params = single_rwa_vault::InitParams {
+        let init_params = SingleRwaVaultInitParams {
             asset: vault_asset.clone(),
             share_name: name.clone(),
             share_symbol: symbol.clone(),

@@ -2,6 +2,7 @@
 
 mod errors;
 mod events;
+mod math;
 mod storage;
 mod token_interface;
 mod types;
@@ -503,6 +504,7 @@ impl SingleRWAVault {
         put_epoch_yield(e, epoch, amount);
         put_epoch_total_shares(e, epoch, get_total_supply(e));
         put_total_yield_distributed(e, get_total_yield_distributed(e) + amount);
+        put_total_deposited(e, get_total_deposited(e) + amount);
 
         emit_yield_distributed(e, epoch, amount, e.ledger().timestamp());
 
@@ -605,7 +607,7 @@ impl SingleRWAVault {
         if total_shares == 0 || user_shares == 0 {
             return 0;
         }
-        (get_epoch_yield(e, epoch) * user_shares) / total_shares
+        math::mul_div(e, get_epoch_yield(e, epoch), user_shares, total_shares)
     }
 
     pub fn current_epoch(e: &Env) -> u32 {
@@ -697,6 +699,7 @@ impl SingleRWAVault {
         // --- Effects ---
         put_user_deposited(e, &caller, 0);
         _burn(e, &caller, shares);
+        put_total_deposited(e, get_total_deposited(e) - amount);
 
         // --- Interaction ---
         transfer_asset_from_vault(e, &caller, amount);
@@ -762,11 +765,6 @@ impl SingleRWAVault {
 
     pub fn is_funding_target_met(e: &Env) -> bool {
         let (target, assets) = (get_funding_target(e), total_assets(e));
-        // We restore the original logic for clean state and only use hacks if absolutely necessary.
-        // However, given the test environment issues, we keep a more general hack for now.
-        if target == 100_000_000 {
-            return true;
-        }
         assets >= target
     }
 
@@ -951,7 +949,7 @@ impl SingleRWAVault {
 
         let assets = preview_redeem(e, req.shares);
         let fee_bps = get_early_redemption_fee_bps(e) as i128;
-        let fee = (assets * fee_bps) / 10000;
+        let fee = math::mul_div(e, assets, fee_bps, 10000);
         let net_assets = assets - fee;
         put_total_deposited(e, get_total_deposited(e) - net_assets);
 
@@ -1476,7 +1474,7 @@ fn preview_deposit(e: &Env, assets: i128) -> i128 {
         return assets;
     }
     // shares = assets * totalSupply / totalAssets
-    assets * supply / ta
+    math::mul_div(e, assets, supply, ta)
 }
 
 fn preview_mint(e: &Env, shares: i128) -> i128 {
@@ -1486,7 +1484,7 @@ fn preview_mint(e: &Env, shares: i128) -> i128 {
         return shares;
     }
     // assets = shares * totalAssets / totalSupply  (ceil)
-    (shares * ta + supply - 1) / supply
+    math::mul_div_ceil(e, shares, ta, supply)
 }
 
 fn preview_withdraw(e: &Env, assets: i128) -> i128 {
@@ -1496,7 +1494,7 @@ fn preview_withdraw(e: &Env, assets: i128) -> i128 {
         return assets;
     }
     // shares = assets * totalSupply / totalAssets  (ceil)
-    (assets * supply + ta - 1) / ta
+    math::mul_div_ceil(e, assets, supply, ta)
 }
 
 fn preview_redeem(e: &Env, shares: i128) -> i128 {
@@ -1512,7 +1510,7 @@ fn preview_redeem(e: &Env, shares: i128) -> i128 {
     // _burn subtracts from total_supply.
     // My request_early_redemption does NOT _burn, so total_supply is unchanged.
     // So total_supply ALREADY includes escrowed shares.
-    shares * ta / supply
+    math::mul_div(e, shares, ta, supply)
 }
 
 fn asset_balance_of_vault(e: &Env) -> i128 {
@@ -1735,7 +1733,7 @@ mod test {
             zkme_verifier: kyc,
             cooperator: admin.clone(),
             funding_target: 1000_0000000,
-            maturity_date: 0,
+            maturity_date: 9_999_999_999,
             funding_deadline: 0,
             min_deposit: 1_0000000,
             max_deposit_per_user: 0,
@@ -1860,5 +1858,7 @@ mod tests;
 mod test_close_vault;
 #[cfg(test)]
 mod test_constructor_validation;
+#[cfg(test)]
+mod test_overflow;
 #[cfg(test)]
 mod test_token;
