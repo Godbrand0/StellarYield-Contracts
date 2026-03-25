@@ -43,7 +43,7 @@ jobs:
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('soroban-contracts/**/Cargo.lock', 'soroban-contracts/**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-clippy-
-      - name: Build WASM (required by vault_factory contractimport)
+      - name: Build single_rwa_vault WASM (required by vault_factory tests)
         working-directory: soroban-contracts
         run: cargo build --target wasm32-unknown-unknown --release -p single_rwa_vault
       - name: Run clippy
