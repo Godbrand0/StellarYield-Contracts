@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use soroban_sdk::{
     symbol_short,
     testutils::{Address as _, Events, Ledger},
@@ -23,7 +21,7 @@ const VAULT_WASM: &[u8] =
 fn setup_factory(
     e: &Env,
 ) -> (
-    VaultFactoryClient,
+    VaultFactoryClient<'_>,
     Address,
     Address,
     Address,
@@ -267,7 +265,7 @@ fn test_full_vault_lifecycle_end_to_end() {
     let e = Env::default();
     e.mock_all_auths();
 
-    let (factory, admin, asset_id, zkme_id, coop_id, _) = setup_factory(&e);
+    let (factory, admin, _asset_id, _zkme_id, _coop_id, _) = setup_factory(&e);
 
     // Deploy mock USDC token
     let usdc_id = e.register(IntegrationMockUsdc, ());
