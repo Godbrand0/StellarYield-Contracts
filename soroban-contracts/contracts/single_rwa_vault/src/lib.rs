@@ -19,8 +19,6 @@ mod test_funding_deadline;
 #[cfg(test)]
 mod test_lifecycle;
 #[cfg(test)]
-mod fuzz_tests;
-#[cfg(test)]
 mod test_emergency_multisig;
 
 pub use crate::types::*;

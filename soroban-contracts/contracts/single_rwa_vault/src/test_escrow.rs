@@ -5,7 +5,7 @@ use soroban_sdk::Address;
 use crate::test_helpers::{mint_usdc, setup, TestContext};
 
 fn fund_and_approve(ctx: &TestContext, user: &Address, amount: i128) {
-    let e = &ctx.env;
+    let _e = &ctx.env;
     // Approve in zkMe
     let zkme_client = crate::test_helpers::MockZkmeClient::new(e, &ctx.kyc_id);
     zkme_client.approve_user(user);
