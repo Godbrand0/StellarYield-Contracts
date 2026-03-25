@@ -1,27 +1,22 @@
-
 #![no_std]
 
+mod errors;
+mod events;
 mod storage;
 mod types;
-mod events;
-mod errors;
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod test;
+#[cfg(test)]
+mod tests;
 
 pub use crate::types::*;
 
-use soroban_sdk::{
-    contract, contractimpl, panic_with_error,
-    Address, BytesN, Env, String, Vec,
-};
+use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Vec};
 
-use crate::storage::*;
 use crate::errors::Error;
 use crate::events::*;
-use single_rwa_vault;
+use crate::storage::*;
 
 /// Maximum number of vaults that can be created in a single batch call.
 /// Contract deployment is one of the most expensive Soroban operations;
@@ -90,14 +85,14 @@ impl VaultFactory {
             rwa_name,
             rwa_symbol,
             rwa_document_uri,
-            zero_str,  // category
-            0u32,      // expected_apy
+            zero_str, // category
+            0u32,     // expected_apy
             maturity_date,
-            0u64,      // funding_deadline (0 = no deadline)
-            0i128,     // funding_target
-            0i128,     // min_deposit
-            0i128,     // max_deposit_per_user
-            200u32,    // early_redemption_fee_bps (2 %)
+            0u64,   // funding_deadline (0 = no deadline)
+            0i128,  // funding_target
+            0i128,  // min_deposit
+            0i128,  // max_deposit_per_user
+            200u32, // early_redemption_fee_bps (2 %)
         )
     }
 
@@ -203,8 +198,7 @@ impl VaultFactory {
         require_admin(e, &caller);
 
         // Vault must exist
-        let info = get_vault_info(e, &vault)
-            .unwrap_or_else(|| panic_not_found(e));
+        let info = get_vault_info(e, &vault).unwrap_or_else(|| panic_not_found(e));
 
         // Guard: only inactive vaults may be removed
         if info.active {
@@ -217,6 +211,9 @@ impl VaultFactory {
             remove_from_single_rwa_vaults(e, &vault);
         }
 
+        // Registry cleanup: remove from asset-specific list
+        remove_from_vaults_by_asset(e, &info.asset, &vault);
+
         // Delete persistent VaultInfo entry
         delete_vault_info(e, &vault);
 
@@ -228,8 +225,7 @@ impl VaultFactory {
         caller.require_auth();
         require_admin(e, &caller);
 
-        let mut info = get_vault_info(e, &vault)
-            .unwrap_or_else(|| panic_not_found(e));
+        let mut info = get_vault_info(e, &vault).unwrap_or_else(|| panic_not_found(e));
 
         // Keep ActiveVaults in sync when the flag changes.
         if active && !info.active {
@@ -282,6 +278,11 @@ impl VaultFactory {
     /// Returns all vaults whose `active` flag is set.
     pub fn get_active_vaults(e: &Env) -> Vec<Address> {
         get_active_vaults(e)
+    }
+
+    /// Returns all vaults registered for a specific underlying asset.
+    pub fn get_vaults_by_asset(e: &Env, asset: Address) -> Vec<Address> {
+        get_vaults_by_asset(e, &asset)
     }
 
     /// Returns a page of vault addresses from the full registry.
@@ -368,11 +369,21 @@ impl VaultFactory {
         bump_instance(e);
     }
 
-    pub fn admin(e: &Env) -> Address { get_admin(e) }
-    pub fn is_operator(e: &Env, account: Address) -> bool { get_operator(e, &account) }
-    pub fn default_asset(e: &Env) -> Address { get_default_asset(e) }
-    pub fn default_zkme_verifier(e: &Env) -> Address { get_default_zkme_verifier(e) }
-    pub fn default_cooperator(e: &Env) -> Address { get_default_cooperator(e) }
+    pub fn admin(e: &Env) -> Address {
+        get_admin(e)
+    }
+    pub fn is_operator(e: &Env, account: Address) -> bool {
+        get_operator(e, &account)
+    }
+    pub fn default_asset(e: &Env) -> Address {
+        get_default_asset(e)
+    }
+    pub fn default_zkme_verifier(e: &Env) -> Address {
+        get_default_zkme_verifier(e)
+    }
+    pub fn default_cooperator(e: &Env) -> Address {
+        get_default_cooperator(e)
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Internal: deploy + initialise a vault
@@ -409,16 +420,14 @@ impl VaultFactory {
         if min_deposit < 0 || funding_target < 0 {
             panic_with_error!(e, Error::InvalidInitParams);
         }
-        if min_deposit > 0
-            && max_deposit_per_user > 0
-            && max_deposit_per_user < min_deposit
-        {
+        if min_deposit > 0 && max_deposit_per_user > 0 && max_deposit_per_user < min_deposit {
             panic_with_error!(e, Error::InvalidInitParams);
         }
 
         // --- Execution ---
         // Resolve asset
-        let vault_asset = if asset == get_default_asset(e) || asset == e.current_contract_address() {
+        let vault_asset = if asset == get_default_asset(e) || asset == e.current_contract_address()
+        {
             // treat "self" as "use default"
             get_default_asset(e)
         } else {
@@ -431,10 +440,15 @@ impl VaultFactory {
         let coop = get_default_cooperator(e);
 
         // Deploy a fresh vault contract instance.
-        // The salt combines the current vault count so every vault has a
-        // unique address.
-        let count = get_all_vaults(e).len();
-        let salt = e.crypto().sha256(&soroban_sdk::Bytes::from_slice(e, &count.to_be_bytes()));
+        // The salt combines a monotonic counter, the vault name, and the
+        // current timestamp to ensure every vault has a unique address and
+        // to prevent collisions even if the registry count decreases.
+        let counter = increment_vault_deploy_counter(e);
+        let mut salt_bytes = soroban_sdk::Bytes::new(e);
+        salt_bytes.append(&soroban_sdk::Bytes::from_slice(e, &counter.to_be_bytes()));
+        salt_bytes.append(&name.clone().to_xdr(e));
+        salt_bytes.append(&soroban_sdk::Bytes::from_slice(e, &e.ledger().timestamp().to_be_bytes()));
+        let salt = e.crypto().sha256(&salt_bytes);
 
         // Build the InitParams struct for the vault constructor.
         // Using a struct keeps us under Soroban's 10-arg limit per function.
@@ -467,6 +481,7 @@ impl VaultFactory {
         // Register the vault
         let info = VaultInfo {
             vault: vault_addr.clone(),
+            asset: vault_asset.clone(),
             vault_type: VaultType::SingleRwa,
             name: name.clone(),
             symbol: symbol.clone(),
@@ -477,8 +492,15 @@ impl VaultFactory {
         push_all_vaults(e, vault_addr.clone());
         push_single_rwa_vaults(e, vault_addr.clone());
         push_active_vaults(e, vault_addr.clone()); // new vaults start active
+        push_vaults_by_asset(e, &vault_asset, vault_addr.clone());
 
-        emit_vault_created(e, vault_addr.clone(), VaultType::SingleRwa, name, e.current_contract_address());
+        emit_vault_created(
+            e,
+            vault_addr.clone(),
+            VaultType::SingleRwa,
+            name,
+            e.current_contract_address(),
+        );
 
         bump_instance(e);
         vault_addr

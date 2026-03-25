@@ -94,6 +94,9 @@ pub enum DataKey {
     // --- User deposit tracking ---
     UserDeposited(Address),
 
+    // --- Total deposited principal ---
+    TotalDeposited,
+
     // --- Early redemption ---
     RedemptionCounter,
     RedemptionRequest(u32),
@@ -147,6 +150,7 @@ pub fn bump_balance(e: &Env, addr: &Address) {
 /// as unclaimed and allow a second payout.  Bumping every related key on every
 /// write keeps the TTL well above the BALANCE_LIFETIME_THRESHOLD (~60 days)
 /// and eliminates that class of bug.
+#[allow(dead_code)]
 pub fn bump_user_data(e: &Env, addr: &Address, epoch: u32) {
     let epoch_keys = [
         DataKey::HasClaimedEpoch(addr.clone(), epoch),
@@ -155,9 +159,11 @@ pub fn bump_user_data(e: &Env, addr: &Address, epoch: u32) {
     ];
     for key in &epoch_keys {
         if e.storage().persistent().has(key) {
-            e.storage()
-                .persistent()
-                .extend_ttl(key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
+            e.storage().persistent().extend_ttl(
+                key,
+                BALANCE_LIFETIME_THRESHOLD,
+                BALANCE_BUMP_AMOUNT,
+            );
         }
     }
 
@@ -167,9 +173,11 @@ pub fn bump_user_data(e: &Env, addr: &Address, epoch: u32) {
     ];
     for key in &addr_keys {
         if e.storage().persistent().has(key) {
-            e.storage()
-                .persistent()
-                .extend_ttl(key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
+            e.storage().persistent().extend_ttl(
+                key,
+                BALANCE_LIFETIME_THRESHOLD,
+                BALANCE_BUMP_AMOUNT,
+            );
         }
     }
 }
@@ -281,6 +289,10 @@ instance_put!(put_total_yield_distributed, TotalYieldDistributed, i128);
 instance_get!(get_total_supply, TotalSupply, i128);
 instance_put!(put_total_supply, TotalSupply, i128);
 
+// TotalDeposited (principal tracking)
+instance_get!(get_total_deposited, TotalDeposited, i128);
+instance_put!(put_total_deposited, TotalDeposited, i128);
+
 // RedemptionCounter
 instance_get!(get_redemption_counter, RedemptionCounter, u32);
 instance_put!(put_redemption_counter, RedemptionCounter, u32);
@@ -297,7 +309,11 @@ pub fn get_operator(e: &Env, addr: &Address) -> bool {
 }
 
 pub fn put_operator(e: &Env, addr: Address, val: bool) {
-    e.storage().instance().set(&DataKey::Operator(addr), &val);
+    if val {
+        e.storage().instance().set(&DataKey::Operator(addr), &val);
+    } else {
+        e.storage().instance().remove(&DataKey::Operator(addr));
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -362,11 +378,7 @@ pub fn put_share_balance(e: &Env, addr: &Address, val: i128) {
 /// (`expiration_ledger < current ledger sequence`).
 pub fn get_share_allowance(e: &Env, owner: &Address, spender: &Address) -> i128 {
     let key = DataKey::Allowance(owner.clone(), spender.clone());
-    match e
-        .storage()
-        .persistent()
-        .get::<_, AllowanceData>(&key)
-    {
+    match e.storage().persistent().get::<_, AllowanceData>(&key) {
         Some(data) => {
             if e.ledger().sequence() > data.expiration_ledger {
                 0 // allowance has expired
@@ -390,9 +402,13 @@ pub fn put_share_allowance(e: &Env, owner: &Address, spender: &Address, new_amou
         .get::<_, AllowanceData>(&key)
         .map(|d| d.expiration_ledger)
         .unwrap_or(0);
-    e.storage()
-        .persistent()
-        .set(&key, &AllowanceData { amount: new_amount, expiration_ledger });
+    e.storage().persistent().set(
+        &key,
+        &AllowanceData {
+            amount: new_amount,
+            expiration_ledger,
+        },
+    );
     // Keep the entry alive until it naturally expires.
     let current = e.ledger().sequence();
     if expiration_ledger > current {
@@ -413,9 +429,13 @@ pub fn put_share_allowance_with_expiry(
     expiration_ledger: u32,
 ) {
     let key = DataKey::Allowance(owner.clone(), spender.clone());
-    e.storage()
-        .persistent()
-        .set(&key, &AllowanceData { amount, expiration_ledger });
+    e.storage().persistent().set(
+        &key,
+        &AllowanceData {
+            amount,
+            expiration_ledger,
+        },
+    );
     // Align the persistent TTL with the expiration so Soroban's archival
     // mechanism cleans up the entry automatically once it expires.
     let current = e.ledger().sequence();
@@ -585,13 +605,11 @@ pub fn put_blacklisted(e: &Env, addr: &Address, status: bool) {
     e.storage()
         .persistent()
         .set(&DataKey::Blacklisted(addr.clone()), &status);
-    e.storage()
-        .persistent()
-        .extend_ttl(
-            &DataKey::Blacklisted(addr.clone()),
-            BALANCE_LIFETIME_THRESHOLD,
-            BALANCE_BUMP_AMOUNT,
-        );
+    e.storage().persistent().extend_ttl(
+        &DataKey::Blacklisted(addr.clone()),
+        BALANCE_LIFETIME_THRESHOLD,
+        BALANCE_BUMP_AMOUNT,
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
