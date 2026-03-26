@@ -8,33 +8,36 @@
 
 extern crate std;
 
-use soroban_sdk::{testutils::Address as _, Address};
 use crate::test_helpers::{advance_time, mint_usdc, setup_with_kyc_bypass};
+use soroban_sdk::{testutils::Address as _, Address};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // set_deposit_limits — validation
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_deposit_limits_negative_min_panics() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_deposit_limits(&ctx.operator, &-1i128, &10_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &-1i128, &10_000_000i128);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_deposit_limits_negative_max_panics() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_deposit_limits(&ctx.operator, &1_000_000i128, &-1i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &1_000_000i128, &-1i128);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_deposit_limits_min_greater_than_max_panics() {
     let ctx = setup_with_kyc_bypass();
     // min=10, max=5 is invalid when both are non-zero
-    ctx.vault().set_deposit_limits(&ctx.operator, &10_000_000i128, &5_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &10_000_000i128, &5_000_000i128);
 }
 
 /// When max is 0 (unlimited) any min is valid.
@@ -42,7 +45,8 @@ fn test_set_deposit_limits_min_greater_than_max_panics() {
 fn test_set_deposit_limits_max_zero_allows_any_min() {
     let ctx = setup_with_kyc_bypass();
     // max=0 means no cap, so a positive min is fine
-    ctx.vault().set_deposit_limits(&ctx.operator, &5_000_000i128, &0i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &5_000_000i128, &0i128);
     assert_eq!(ctx.vault().min_deposit(), 5_000_000i128);
     assert_eq!(ctx.vault().max_deposit_per_user(), 0i128);
 }
@@ -51,7 +55,8 @@ fn test_set_deposit_limits_max_zero_allows_any_min() {
 #[test]
 fn test_set_deposit_limits_min_zero_allows_any_max() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_deposit_limits(&ctx.operator, &0i128, &2_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &0i128, &2_000_000i128);
     assert_eq!(ctx.vault().min_deposit(), 0i128);
     assert_eq!(ctx.vault().max_deposit_per_user(), 2_000_000i128);
 }
@@ -60,7 +65,8 @@ fn test_set_deposit_limits_min_zero_allows_any_max() {
 #[test]
 fn test_set_deposit_limits_min_equals_max_is_valid() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_deposit_limits(&ctx.operator, &5_000_000i128, &5_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &5_000_000i128, &5_000_000i128);
     assert_eq!(ctx.vault().min_deposit(), 5_000_000i128);
     assert_eq!(ctx.vault().max_deposit_per_user(), 5_000_000i128);
 }
@@ -73,7 +79,8 @@ fn test_set_deposit_limits_min_equals_max_is_valid() {
 #[test]
 fn test_set_deposit_limits_funding_state_operator_succeeds() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_deposit_limits(&ctx.operator, &500_000i128, &20_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &500_000i128, &20_000_000i128);
     assert_eq!(ctx.vault().min_deposit(), 500_000i128);
     assert_eq!(ctx.vault().max_deposit_per_user(), 20_000_000i128);
 }
@@ -83,7 +90,8 @@ fn test_set_deposit_limits_funding_state_operator_succeeds() {
 #[should_panic(expected = "Error(Contract, #3)")]
 fn test_set_deposit_limits_non_operator_panics() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_deposit_limits(&ctx.user, &500_000i128, &20_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.user, &500_000i128, &20_000_000i128);
 }
 
 /// Admin can update limits during Active state.
@@ -98,7 +106,8 @@ fn test_set_deposit_limits_active_state_admin_succeeds() {
     ctx.vault().deposit(&user2, &50_000_000i128, &user2);
     ctx.vault().activate_vault(&ctx.admin);
 
-    ctx.vault().set_deposit_limits(&ctx.admin, &500_000i128, &60_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.admin, &500_000i128, &60_000_000i128);
     assert_eq!(ctx.vault().min_deposit(), 500_000i128);
 }
 
@@ -115,7 +124,8 @@ fn test_set_deposit_limits_active_state_operator_panics() {
     ctx.vault().activate_vault(&ctx.admin);
 
     // operator is not admin — must panic with NotAdmin
-    ctx.vault().set_deposit_limits(&ctx.operator, &500_000i128, &60_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &500_000i128, &60_000_000i128);
 }
 
 /// set_deposit_limits is blocked in Matured state.
@@ -132,7 +142,8 @@ fn test_set_deposit_limits_matured_state_panics() {
     advance_time(&ctx.env, 9_999_999_999u64);
     ctx.vault().mature_vault(&ctx.admin);
 
-    ctx.vault().set_deposit_limits(&ctx.admin, &500_000i128, &60_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.admin, &500_000i128, &60_000_000i128);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,7 +164,8 @@ fn test_lowering_max_does_not_affect_existing_depositor() {
     assert!(shares_before > 0);
 
     // Operator lowers cap to 10 USDC (below what user already deposited)
-    ctx.vault().set_deposit_limits(&ctx.operator, &1_000_000i128, &10_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &1_000_000i128, &10_000_000i128);
 
     // Existing shares are unchanged
     assert_eq!(ctx.vault().balance(&ctx.user), shares_before);
@@ -171,7 +183,8 @@ fn test_new_deposit_blocked_after_max_lowered() {
     ctx.vault().deposit(&ctx.user, &5_000_000i128, &ctx.user);
 
     // Lower max to 8 USDC; user has deposited 5 USDC so far, 3 USDC headroom
-    ctx.vault().set_deposit_limits(&ctx.operator, &1_000_000i128, &8_000_000i128);
+    ctx.vault()
+        .set_deposit_limits(&ctx.operator, &1_000_000i128, &8_000_000i128);
 
     // Attempt a 5 USDC deposit — total would be 10 USDC, over the 8 USDC cap
     ctx.vault().deposit(&ctx.user, &5_000_000i128, &ctx.user);
@@ -189,18 +202,19 @@ fn test_set_min_deposit_succeeds_in_funding() {
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_min_deposit_negative_panics() {
     let ctx = setup_with_kyc_bypass();
     ctx.vault().set_min_deposit(&ctx.operator, &-1i128);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_min_deposit_above_existing_max_panics() {
     let ctx = setup_with_kyc_bypass();
     // Set max to 50_000_000 first, then try to set min to 60_000_000
-    ctx.vault().set_max_deposit_per_user(&ctx.operator, &50_000_000i128);
+    ctx.vault()
+        .set_max_deposit_per_user(&ctx.operator, &50_000_000i128);
     ctx.vault().set_min_deposit(&ctx.operator, &60_000_000i128);
 }
 
@@ -218,23 +232,25 @@ fn test_set_min_deposit_zero_is_valid() {
 #[test]
 fn test_set_max_deposit_per_user_succeeds_in_funding() {
     let ctx = setup_with_kyc_bypass();
-    ctx.vault().set_max_deposit_per_user(&ctx.operator, &20_000_000i128);
+    ctx.vault()
+        .set_max_deposit_per_user(&ctx.operator, &20_000_000i128);
     assert_eq!(ctx.vault().max_deposit_per_user(), 20_000_000i128);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_max_deposit_per_user_negative_panics() {
     let ctx = setup_with_kyc_bypass();
     ctx.vault().set_max_deposit_per_user(&ctx.operator, &-1i128);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #28)")]
+#[should_panic(expected = "Error(Contract, #33)")]
 fn test_set_max_deposit_per_user_below_existing_min_panics() {
     let ctx = setup_with_kyc_bypass();
     // Default min is 1_000_000; try to set max to 500_000
-    ctx.vault().set_max_deposit_per_user(&ctx.operator, &500_000i128);
+    ctx.vault()
+        .set_max_deposit_per_user(&ctx.operator, &500_000i128);
 }
 
 /// max=0 (unlimited) is always valid, even when min is set.
@@ -257,7 +273,8 @@ fn test_set_max_deposit_per_user_active_operator_panics() {
     ctx.vault().deposit(&user2, &50_000_000i128, &user2);
     ctx.vault().activate_vault(&ctx.admin);
 
-    ctx.vault().set_max_deposit_per_user(&ctx.operator, &20_000_000i128);
+    ctx.vault()
+        .set_max_deposit_per_user(&ctx.operator, &20_000_000i128);
 }
 
 /// set_max_deposit_per_user is blocked in Matured state.
@@ -274,7 +291,8 @@ fn test_set_max_deposit_per_user_matured_panics() {
     advance_time(&ctx.env, 9_999_999_999u64);
     ctx.vault().mature_vault(&ctx.admin);
 
-    ctx.vault().set_max_deposit_per_user(&ctx.admin, &20_000_000i128);
+    ctx.vault()
+        .set_max_deposit_per_user(&ctx.admin, &20_000_000i128);
 }
 
 /// set_min_deposit is blocked in Matured state.

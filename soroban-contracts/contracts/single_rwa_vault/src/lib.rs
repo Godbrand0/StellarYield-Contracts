@@ -2220,10 +2220,10 @@ mod test_close_vault;
 #[cfg(test)]
 mod test_constructor_validation;
 #[cfg(test)]
+mod test_deposit_limits;
+#[cfg(test)]
 mod test_overflow;
 #[cfg(test)]
 mod test_rwa_setters;
 #[cfg(test)]
 mod test_token;
-#[cfg(test)]
-mod test_deposit_limits;
