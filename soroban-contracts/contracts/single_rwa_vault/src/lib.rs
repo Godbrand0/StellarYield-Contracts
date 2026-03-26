@@ -21,7 +21,7 @@ mod test_convert_erc4626;
 #[cfg(test)]
 mod test_epoch_history;
 #[cfg(test)]
-mod test_fund_deadline;
+mod test_funding_deadline;
 #[cfg(test)]
 mod test_lifecycle;
 #[cfg(test)]
@@ -657,7 +657,7 @@ impl SingleRWAVault {
         }
         put_last_claimed_epoch(e, &caller, epoch);
 
-        put_total_yield_claimed(e, &caller, get_total_yield_claimed(e, &caller) + amount);
+        put_yield_claimed(e, &caller, get_yield_claimed(e, &caller) + amount);
         transfer_asset_from_vault(e, &caller, amount);
 
         emit_yield_claimed(e, caller, amount, epoch);
@@ -699,7 +699,7 @@ impl SingleRWAVault {
         }
         put_last_claimed_epoch(e, &caller, cursor);
 
-        put_total_yield_claimed(e, &caller, get_total_yield_claimed(e, &caller) + amount);
+        put_yield_claimed(e, &caller, get_yield_claimed(e, &caller) + amount);
         transfer_asset_from_vault(e, &caller, amount);
 
         emit_yield_claimed(e, caller, amount, epoch);
@@ -709,12 +709,8 @@ impl SingleRWAVault {
     }
 
     pub fn pending_yield(e: &Env, user: Address) -> i128 {
-        let epoch = get_current_epoch(e);
-        // Start from the cursor so we skip already-claimed epochs entirely.
-        let start = get_last_claimed_epoch(e, &user) + 1;
-        let mut total = 0i128;
         for i in start..=epoch {
-            if !get_has_claimed_epoch(e, &user, i) {
+            if !get_has_claimed(e, &user, i) {
                 total += Self::pending_yield_for_epoch(e, user.clone(), i);
             }
         }
@@ -723,11 +719,11 @@ impl SingleRWAVault {
 
     pub fn pending_yield_for_epoch(e: &Env, user: Address, epoch: u32) -> i128 {
         let cur = get_current_epoch(e);
-        if epoch == 0 || epoch > cur || get_has_claimed_epoch(e, &user, epoch) {
+        if epoch > cur || get_has_claimed(e, &user, epoch) {
             return 0;
         }
-        let user_shares = _get_user_shares_for_epoch(e, &user, epoch);
-        let total_shares = get_epoch_total_shares(e, epoch);
+        let user_shares = get_user_shares_for_epoch(e, &user, epoch);
+        let total_shares = get_epoch_shares(e, epoch);
         if total_shares == 0 || user_shares == 0 {
             return 0;
         }
@@ -744,7 +740,7 @@ impl SingleRWAVault {
         get_total_yield_distributed(e)
     }
     pub fn total_yield_claimed(e: &Env, user: Address) -> i128 {
-        get_total_yield_claimed(e, &user)
+        get_yield_claimed(e, &user)
     }
 
     /// The highest epoch at which all epochs ≤ cursor have been fully claimed
@@ -756,7 +752,7 @@ impl SingleRWAVault {
     /// Get detailed data for a single epoch.
     pub fn get_epoch_data(e: &Env, epoch: u32) -> EpochData {
         let yield_amount = get_epoch_yield(e, epoch);
-        let total_shares = get_epoch_total_shares(e, epoch);
+        let total_shares = get_epoch_shares(e, epoch);
         let yield_per_share = if total_shares > 0 {
             yield_amount * PRECISION / total_shares
         } else {
@@ -764,10 +760,10 @@ impl SingleRWAVault {
         };
         EpochData {
             epoch,
-            yield_amount,
+            yield_distributed: yield_amount,
             total_shares,
             yield_per_share,
-            timestamp: get_epoch_timestamp(e, epoch),
+            timestamp: get_epoch_time(e, epoch),
         }
     }
 
@@ -839,8 +835,8 @@ impl SingleRWAVault {
         }
         let mut result: Vec<UserEpochYield> = Vec::new(e);
         for epoch in start_epoch..=actual_end {
-            let user_shares = _get_user_shares_for_epoch(e, &user, epoch);
-            let total_shares = get_epoch_total_shares(e, epoch);
+            let user_shares = get_user_shares_for_epoch(e, &user, epoch);
+            let total_shares = get_epoch_shares(e, epoch);
             let yield_amount = get_epoch_yield(e, epoch);
             let yield_earned = if total_shares > 0 {
                 yield_amount * user_shares / total_shares
@@ -851,7 +847,7 @@ impl SingleRWAVault {
                 epoch,
                 user_shares,
                 yield_earned,
-                claimed: get_has_claimed_epoch(e, &user, epoch),
+                claimed: get_has_claimed(e, &user, epoch),
             });
         }
         result
@@ -1076,13 +1072,14 @@ impl SingleRWAVault {
         }
 
         // --- Effects: auto-claim pending yield ---
-        let pending = Self::pending_yield(e, owner.clone());
-        let epoch = get_current_epoch(e);
-        if pending > 0 {
-            for i in 1..=epoch {
-                put_has_claimed_epoch(e, &owner, i, true);
+        let pending_yield = Self::pending_yield(e, owner.clone());
+        let current_epoch = get_current_epoch(e);
+        let last_clm_epoch = get_last_claimed_epoch(e, &owner);
+        if pending_yield > 0 {
+            for i in (last_clm_epoch + 1)..=current_epoch {
+                put_has_claimed(e, &owner, i, true);
             }
-            put_total_yield_claimed(e, &owner, get_total_yield_claimed(e, &owner) + pending);
+            put_yield_claimed(e, &owner, get_yield_claimed(e, &owner) + pending_yield);
         }
 
         update_user_snapshot(e, &owner);
@@ -1091,8 +1088,8 @@ impl SingleRWAVault {
         put_total_deposited(e, get_total_deposited(e) - assets);
 
         let mut total_out = assets;
-        if pending > 0 {
-            total_out += pending;
+        if pending_yield > 0 {
+            total_out += pending_yield;
         }
 
         // --- Interaction ---
@@ -1300,7 +1297,7 @@ impl SingleRWAVault {
     pub fn grant_role(e: &Env, caller: Address, addr: Address, role: Role) {
         caller.require_auth();
         require_admin(e, &caller);
-        put_role(e, addr.clone(), role.clone(), true);
+        add_role(e, addr.clone(), role.clone());
         emit_role_granted(e, addr, role);
         bump_instance(e);
     }
@@ -1309,7 +1306,7 @@ impl SingleRWAVault {
     pub fn revoke_role(e: &Env, caller: Address, addr: Address, role: Role) {
         caller.require_auth();
         require_admin(e, &caller);
-        put_role(e, addr.clone(), role.clone(), false);
+        remove_role(e, addr.clone(), role.clone());
         emit_role_revoked(e, addr, role);
         bump_instance(e);
     }
@@ -1317,10 +1314,7 @@ impl SingleRWAVault {
     /// Returns `true` when `addr` holds `role`, the `FullOperator` superrole,
     /// or is the admin.
     pub fn has_role(e: &Env, addr: Address, role: Role) -> bool {
-        if addr == get_admin(e) {
-            return true;
-        }
-        get_role(e, &addr, Role::FullOperator) || get_role(e, &addr, role)
+        crate::storage::has_role(e, &addr, role)
     }
 
     /// Backward-compatible: grants or revokes the `FullOperator` superrole.
@@ -1505,12 +1499,12 @@ impl SingleRWAVault {
             proposed_at: e.ledger().timestamp(),
             executed: false,
         };
-        put_emergency_proposal(e, id, proposal);
+        put_emergency_proposal(e, id, &proposal);
 
         // Proposer's vote is counted immediately.
-        let mut approvals = get_emerg_approvals(e, id);
+        let mut approvals = get_emergency_proposal_approval(e, id);
         approvals.push_back(caller.clone());
-        put_emergency_proposal_approvals(e, id, approvals);
+        put_emergency_proposal_approval(e, id, approvals);
 
         put_emergency_proposal_counter(e, id + 1);
 
@@ -1540,7 +1534,7 @@ impl SingleRWAVault {
             panic_with_error!(e, Error::ProposalExpired);
         }
 
-        let mut approvals = get_emerg_approvals(e, proposal_id);
+        let mut approvals = get_emergency_proposal_approval(e, proposal_id);
         for addr in approvals.iter() {
             if addr == caller {
                 panic_with_error!(e, Error::AlreadyApproved);
@@ -1548,7 +1542,7 @@ impl SingleRWAVault {
         }
         approvals.push_back(caller.clone());
         let approval_count = approvals.len();
-        put_emergency_proposal_approvals(e, proposal_id, approvals);
+        put_emergency_proposal_approval(e, proposal_id, approvals);
 
         emit_emergency_approved(e, proposal_id, caller, approval_count);
         bump_instance(e);
@@ -1576,7 +1570,7 @@ impl SingleRWAVault {
             panic_with_error!(e, Error::ProposalExpired);
         }
 
-        let approvals = get_emerg_approvals(e, proposal_id);
+        let approvals = get_emergency_proposal_approval(e, proposal_id);
         let threshold = get_emergency_threshold(e);
         if approvals.len() < threshold {
             panic_with_error!(e, Error::ThresholdNotMet);
@@ -1584,7 +1578,7 @@ impl SingleRWAVault {
 
         // --- Effects (CEI: mark executed and pause before transfer) ---
         proposal.executed = true;
-        put_emergency_proposal(e, proposal_id, proposal.clone());
+        put_emergency_proposal(e, proposal_id, &proposal);
         let balance = asset_balance_of_vault(e);
         put_paused(e, true);
         put_freeze_flags(e, Self::FREEZE_ALL);
@@ -1782,7 +1776,7 @@ impl SingleRWAVault {
     // ─────────────────────────────────────────────────────────────────
 
     pub fn allowance(e: &Env, from: Address, spender: Address) -> i128 {
-        get_share_allowance(e, &from, &spender)
+        get_allowance(e, from, spender).amount
     }
 
     pub fn approve(e: &Env, from: Address, spender: Address, amount: i128, expiration_ledger: u32) {
@@ -1794,7 +1788,7 @@ impl SingleRWAVault {
         if amount > 0 && expiration_ledger < e.ledger().sequence() {
             panic_with_error!(e, Error::InvalidVaultState);
         }
-        put_share_allowance_with_expiry(e, &from, &spender, amount, expiration_ledger);
+        put_allowance(e, from.clone(), spender.clone(), amount, expiration_ledger);
         emit_approval(e, from, spender, amount, expiration_ledger);
         bump_instance(e);
     }
@@ -1832,11 +1826,11 @@ impl SingleRWAVault {
         }
         update_user_snapshot(e, &from);
         update_user_snapshot(e, &to);
-        let allowance = get_share_allowance(e, &from, &spender);
-        if allowance < amount {
+        let allowance_data = get_allowance(e, from.clone(), spender.clone());
+        if allowance_data.amount < amount {
             panic_with_error!(e, Error::InsufficientAllowance);
         }
-        put_share_allowance(e, &from, &spender, allowance - amount);
+        put_allowance(e, from.clone(), spender.clone(), allowance_data.amount - amount, allowance_data.expiration_ledger);
         spend_share_balance(e, &from, amount);
         receive_share_balance(e, &to, amount);
         emit_transfer(e, from, to, amount);
@@ -1854,11 +1848,11 @@ impl SingleRWAVault {
 
     pub fn burn_from(e: &Env, spender: Address, from: Address, amount: i128) {
         spender.require_auth();
-        let allowance = get_share_allowance(e, &from, &spender);
-        if allowance < amount {
+        let allowance_data = get_allowance(e, from.clone(), spender.clone());
+        if allowance_data.amount < amount {
             panic_with_error!(e, Error::InsufficientAllowance);
         }
-        put_share_allowance(e, &from, &spender, allowance - amount);
+        put_allowance(e, from.clone(), spender.clone(), allowance_data.amount - amount, allowance_data.expiration_ledger);
         // Snapshot before balance change so epoch yield is attributed to pre-burn shares.
         update_user_snapshot(e, &from);
         _burn(e, &from, amount);
@@ -1990,23 +1984,23 @@ fn receive_share_balance(e: &Env, to: &Address, amount: i128) {
 
 /// Update per-epoch share snapshot for yield accounting.
 fn update_user_snapshot(e: &Env, user: &Address) {
-    let last_epoch = get_last_interaction_epoch(e, user);
+    let last_epoch = get_last_interact_epoch(e, user);
     let current_epoch = get_current_epoch(e);
     let current_bal = get_share_balance(e, user);
 
     for i in (last_epoch + 1)..=current_epoch {
-        if !get_has_snapshot_for_epoch(e, user, i) {
-            put_user_shares_at_epoch(e, user, i, current_bal);
-            put_has_snapshot_for_epoch(e, user, i, true);
+        if !get_user_has_snapshot(e, user, i) {
+            put_user_shares(e, user, i, current_bal);
+            put_user_has_snapshot(e, user, i, true);
         }
     }
-    put_last_interaction_epoch(e, user, current_epoch);
+    put_last_interact_epoch(e, user, current_epoch);
     bump_balance(e, user);
 }
 
-fn _get_user_shares_for_epoch(e: &Env, user: &Address, epoch: u32) -> i128 {
-    if get_has_snapshot_for_epoch(e, user, epoch) {
-        get_user_shares_at_epoch(e, user, epoch)
+fn get_user_shares_for_epoch(e: &Env, user: &Address, epoch: u32) -> i128 {
+    if get_user_has_snapshot(e, user, epoch) {
+        get_user_shares(e, user, epoch)
     } else {
         get_share_balance(e, user)
     }
@@ -2037,13 +2031,7 @@ fn require_admin(e: &Env, caller: &Address) {
 /// - FullOperator → backward-compatible superrole; passes every role check
 /// - Named role → passes only the matching role check
 fn require_role(e: &Env, caller: &Address, role: Role) {
-    if *caller == get_admin(e) {
-        return;
-    }
-    if get_role(e, caller, Role::FullOperator) {
-        return;
-    }
-    if !get_role(e, caller, role) {
+    if !crate::storage::has_role(e, caller, role) {
         panic_with_error!(e, Error::NotOperator);
     }
 }

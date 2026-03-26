@@ -1,0 +1,1029 @@
+    Checking single_rwa_vault v0.1.0 (/home/godbrand/Documents/GitHub/StellarYield-Contracts/soroban-contracts/contracts/single_rwa_vault)
+error: custom attribute panicked
+  --> contracts/single_rwa_vault/src/storage.rs:34:1
+   |
+34 | #[contracttype]
+   | ^^^^^^^^^^^^^^^
+   |
+   = help: message: called `Result::unwrap()` on an `Err` value: LengthExceedsMax
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:110:15
+    |
+110 |     let key = Key::Balance(addr.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:131:9
+    |
+131 |         Key::HasClaimed(addr.clone(), epoch),
+    |         ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:132:9
+    |
+132 |         Key::UserShares(addr.clone(), epoch),
+    |         ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:133:9
+    |
+133 |         Key::HasSnapshot(addr.clone(), epoch),
+    |         ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:146:9
+    |
+146 |         Key::YieldClaimed(addr.clone()),
+    |         ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:147:9
+    |
+147 |         Key::LastInteract(addr.clone()),
+    |         ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:148:9
+    |
+148 |         Key::LastClaimed(addr.clone()),
+    |         ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+182 | instance_get!(get_share_name, ShName, String);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+183 | instance_put!(put_share_name, ShName, String);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+184 | instance_get!(get_share_symbol, ShSymb, String);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+185 | instance_put!(put_share_symbol, ShSymb, String);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+186 | instance_get!(get_share_decimals, ShDec, u32);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+187 | instance_put!(put_share_decimals, ShDec, u32);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+190 | instance_get!(get_asset, Asset, Address);
+    | ---------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+191 | instance_put!(put_asset, Asset, Address);
+    | ---------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+194 | instance_get!(get_admin, Admin, Address);
+    | ---------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+195 | instance_put!(put_admin, Admin, Address);
+    | ---------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+198 | instance_get!(get_zkme_verifier, Verifier, Address);
+    | --------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+199 | instance_put!(put_zkme_verifier, Verifier, Address);
+    | --------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+200 | instance_get!(get_cooperator, Coop, Address);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+201 | instance_put!(put_cooperator, Coop, Address);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+204 | instance_get!(get_rwa_name, RwaName, String);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+205 | instance_put!(put_rwa_name, RwaName, String);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+206 | instance_get!(get_rwa_symbol, RwaSymb, String);
+    | ---------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+207 | instance_put!(put_rwa_symbol, RwaSymb, String);
+    | ---------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+208 | instance_get!(get_rwa_document_uri, RwaUri, String);
+    | --------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+209 | instance_put!(put_rwa_document_uri, RwaUri, String);
+    | --------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+210 | instance_get!(get_rwa_category, RwaCat, String);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+211 | instance_put!(put_rwa_category, RwaCat, String);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+212 | instance_get!(get_expected_apy, Apy, u32);
+    | ----------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+213 | instance_put!(put_expected_apy, Apy, u32);
+    | ----------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+216 | instance_get!(get_funding_target, Target, i128);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+217 | instance_put!(put_funding_target, Target, i128);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+218 | instance_get!(get_maturity_date, Maturity, u64);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+219 | instance_put!(put_maturity_date, Maturity, u64);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:224:15
+    |
+224 |         .get(&Key::Deadline)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:228:33
+    |
+228 |     e.storage().instance().set(&Key::Deadline, &val);
+    |                                 ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+231 | instance_get!(get_min_deposit, MinDep, i128);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+232 | instance_put!(put_min_deposit, MinDep, i128);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+233 | instance_get!(get_max_user_dep, MaxUser, i128);
+    | ---------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+234 | instance_put!(put_max_user_dep, MaxUser, i128);
+    | ---------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+235 | instance_get!(get_redem_fee_bps, RedemFee, u32);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+236 | instance_put!(put_redem_fee_bps, RedemFee, u32);
+    | ----------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+239 | instance_get!(get_vault_state, State, VaultState);
+    | ------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+240 | instance_put!(put_vault_state, State, VaultState);
+    | ------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+241 | instance_get!(get_paused, Paused, bool);
+    | --------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+242 | instance_put!(put_paused, Paused, bool);
+    | --------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+243 | instance_get!(get_freeze_flags, Flags, u32);
+    | ------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+244 | instance_put!(put_freeze_flags, Flags, u32);
+    | ------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+245 | instance_get!(get_locked, Locked, bool);
+    | --------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+246 | instance_put!(put_locked, Locked, bool);
+    | --------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:251:15
+    |
+251 |         .get(&Key::ActivateTime)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:257:15
+    |
+257 |         .set(&Key::ActivateTime, &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+261 | instance_get!(get_current_epoch, Epoch, u32);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+262 | instance_put!(put_current_epoch, Epoch, u32);
+    | -------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+263 | instance_get!(get_total_yield_distributed, YieldDist, i128);
+    | ----------------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+264 | instance_put!(put_total_yield_distributed, YieldDist, i128);
+    | ----------------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+267 | instance_get!(get_total_supply, Supply, i128);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+268 | instance_put!(put_total_supply, Supply, i128);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+271 | instance_get!(get_total_deposited, TDep, i128);
+    | ---------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+272 | instance_put!(put_total_deposited, TDep, i128);
+    | ---------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+275 | instance_get!(get_redemption_counter, RedemCount, u32);
+    | ------------------------------------------------------ in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+276 | instance_put!(put_redemption_counter, RedemCount, u32);
+    | ------------------------------------------------------ in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+279 | instance_get!(get_contract_version, Ver, u32);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+280 | instance_put!(put_contract_version, Ver, u32);
+    | --------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:169:41
+    |
+169 |             e.storage().instance().get(&Key::$key).unwrap()
+    |                                         ^^^ use of undeclared type `Key`
+...
+281 | instance_get!(get_storage_schema_version, SchemaVersion, u32);
+    | ------------------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_get` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:176:41
+    |
+176 |             e.storage().instance().set(&Key::$key, &val);
+    |                                         ^^^ use of undeclared type `Key`
+...
+282 | instance_put!(put_storage_schema_version, SchemaVersion, u32);
+    | ------------------------------------------------------------- in this macro invocation
+    |
+    = note: this error originates in the macro `instance_put` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:296:15
+    |
+296 |         .get(&Key::Role(addr.clone(), role))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:305:19
+    |
+305 |             .set(&Key::Role(addr, role), &true);
+    |                   ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:307:40
+    |
+307 |         e.storage().instance().remove(&Key::Role(addr, role));
+    |                                        ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:334:15
+    |
+334 |         .get(&Key::EpYield(epoch))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:340:15
+    |
+340 |         .set(&Key::EpYield(epoch), &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:346:15
+    |
+346 |         .get(&Key::EpShares(epoch))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:352:15
+    |
+352 |         .set(&Key::EpShares(epoch), &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:358:15
+    |
+358 |         .get(&Key::EpTime(epoch))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:364:15
+    |
+364 |         .set(&Key::EpTime(epoch), &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:387:15
+    |
+387 |         .get(&Key::Balance(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:393:15
+    |
+393 |         .set(&Key::Balance(addr.clone()), &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:400:15
+    |
+400 |     let key = Key::Allow(owner.clone(), spender.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:417:15
+    |
+417 |     let key = Key::Allow(owner.clone(), spender.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:451:15
+    |
+451 |     let key = Key::Allow(owner.clone(), spender.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:473:15
+    |
+473 |         .get(&Key::UDep(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:479:15
+    |
+479 |         .set(&Key::UDep(addr.clone()), &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:481:10
+    |
+481 |         &Key::UDep(addr.clone()),
+    |          ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:490:15
+    |
+490 |         .get(&Key::YieldClaimed(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:494:15
+    |
+494 |     let key = Key::YieldClaimed(addr.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:504:15
+    |
+504 |         .get(&Key::LastClaimed(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:508:15
+    |
+508 |     let key = Key::LastClaimed(addr.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:518:15
+    |
+518 |         .get(&Key::HasClaimed(addr.clone(), epoch))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:522:15
+    |
+522 |     let key = Key::HasClaimed(addr.clone(), epoch);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:532:15
+    |
+532 |         .get(&Key::UserShares(addr.clone(), epoch))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:536:15
+    |
+536 |     let key = Key::UserShares(addr.clone(), epoch);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:546:15
+    |
+546 |         .get(&Key::HasSnapshot(addr.clone(), epoch))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:550:15
+    |
+550 |     let key = Key::HasSnapshot(addr.clone(), epoch);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:560:15
+    |
+560 |         .get(&Key::LastInteract(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:564:15
+    |
+564 |     let key = Key::LastInteract(addr.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:578:15
+    |
+578 |         .get(&Key::RedemReq(id))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:584:15
+    |
+584 |         .set(&Key::RedemReq(id), &req);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:586:10
+    |
+586 |         &Key::RedemReq(id),
+    |          ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:595:15
+    |
+595 |         .get(&Key::EscrowShares(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:600:15
+    |
+600 |     let key = Key::EscrowShares(addr.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:617:15
+    |
+617 |         .get(&Key::TransferKyc)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:624:15
+    |
+624 |         .set(&Key::TransferKyc, &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:634:15
+    |
+634 |         .get(&Key::BList(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:641:15
+    |
+641 |         .set(&Key::BList(addr.clone()), &status);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:643:10
+    |
+643 |         &Key::BList(addr.clone()),
+    |          ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:656:15
+    |
+656 |         .get(&Key::EmergBalance)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:661:33
+    |
+661 |     e.storage().instance().set(&Key::EmergBalance, &val);
+    |                                 ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:667:15
+    |
+667 |         .get(&Key::EmTotalSupSnap)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:674:15
+    |
+674 |         .set(&Key::EmTotalSupSnap, &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:680:15
+    |
+680 |         .get(&Key::HasClaimEmerg(addr.clone()))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:685:15
+    |
+685 |     let key = Key::HasClaimEmerg(addr.clone());
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:698:33
+    |
+698 |     e.storage().instance().has(&Key::EmSigners)
+    |                                 ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:704:15
+    |
+704 |         .get(&Key::EmSigners)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:711:15
+    |
+711 |         .set(&Key::EmSigners, &signers);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:717:15
+    |
+717 |         .get(&Key::EmThreshold)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:724:15
+    |
+724 |         .set(&Key::EmThreshold, &threshold);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:730:15
+    |
+730 |         .get(&Key::EmPropCount)
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:737:15
+    |
+737 |         .set(&Key::EmPropCount, &val);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:743:15
+    |
+743 |         .get(&Key::EmergProp(id))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:747:15
+    |
+747 |     let key = Key::EmergProp(id);
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:757:15
+    |
+757 |         .get(&Key::EPAppr(id))
+    |               ^^^ use of undeclared type `Key`
+
+error[E0433]: failed to resolve: use of undeclared type `Key`
+   --> contracts/single_rwa_vault/src/storage.rs:762:15
+    |
+762 |     let key = Key::EPAppr(id);
+    |               ^^^ use of undeclared type `Key`
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `single_rwa_vault` (lib) due to 124 previous errors

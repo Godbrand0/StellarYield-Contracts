@@ -31,99 +31,89 @@ pub const BALANCE_BUMP_AMOUNT: u32 = 1069000;
 // Storage key enum
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Storage keys for vault configuration and metadata (Instance storage).
 #[contracttype]
 #[derive(Clone)]
-pub enum Key {
-    // --- Share token metadata ---
+pub enum ConfigKey {
     ShName,
     ShSymb,
     ShDec,
-
-    // --- Asset ---
     Asset,
-
-    // --- Admin / operators ---
     Admin,
-    Role(Address, Role),
-
-    // --- zkMe ---
     Verifier,
     Coop,
-
-    // --- RWA details ---
     RwaName,
     RwaSymb,
     RwaUri,
     RwaCat,
     Apy,
-
-    // --- Vault config ---
     Target,
     Maturity,
     MinDep,
     MaxUser,
     RedemFee,
+    Ver,
+    SchemaVersion,
+    Deadline,
+    EmSigners,
+    EmThreshold,
+}
 
-    // --- Vault state ---
+/// Storage keys for dynamic vault state (Instance storage).
+#[contracttype]
+#[derive(Clone)]
+pub enum StateKey {
     State,
     Paused,
     Flags,
-    ActTime,
+    ActivateTime,
     Locked,
-    Deadline,
-
-    // --- Versioning ---
-    Ver,
-    SchVer,
-
-    // --- Epoch / yield ---
     Epoch,
     YieldDist,
+    Supply,
+    TDep,
+    RedemCount,
+    TransferKyc,
+    EmergBalance,
+    EmTotalSupSnap,
+    EmPropCount,
+}
+
+/// Storage keys for user-specific data (Persistent storage).
+#[contracttype]
+#[derive(Clone)]
+pub enum UserKey {
+    Balance(Address),
+    Allow(Address, Address),
+    UDep(Address),
+    YieldClaimed(Address),
+    LastClaimed(Address),
+    LastInteract(Address),
+    EscrowShares(Address),
+    BList(Address),
+    Role(Address, Role),
+    HasClaimEmerg(Address),
+}
+
+/// Storage keys for per-epoch data (Persistent storage).
+#[contracttype]
+#[derive(Clone)]
+pub enum EpochKey {
     EpYield(u32),
     EpShares(u32),
     EpTime(u32),
-    YldClm(Address),
-    HasClm(Address, u32),
-    LastClm(Address),
+    HasClaimed(Address, u32),
+    UserShares(Address, u32),
+    HasSnapshot(Address, u32),
+}
 
-    // --- User share snapshots ---
-    UShares(Address, u32),
-    USnap(Address, u32),
-    LInter(Address),
-
-    // --- Share token balances / allowances ---
-    Balance(Address),
-    Allow(Address, Address),
-    Supply,
-
-    // --- User deposit tracking ---
-    UDep(Address),
-
-    // --- Total deposited principal ---
-    TDep,
-
-    // --- Early redemption ---
-    RCount,
-    RReq(u32),
-    EShares(Address),
-
-    // --- Blacklist ---
-    BList(Address),
-
-    // --- Transfer KYC gate ---
-    TKyc,
-
-    // --- Emergency pro-rata distribution ---
-    EBal,
-    EHclm(Address),
-    ETSna,
-
-    // --- Emergency multi-sig ---
-    ESign,
-    EThre,
-    EPCount,
-    EProp(u32),
+/// Storage keys for proposals and requests (Persistent storage).
+#[contracttype]
+#[derive(Clone)]
+pub enum ProposalKey {
+    EmergProp(u32),
     EPAppr(u32),
+    RedemReq(u32),
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +127,7 @@ pub fn bump_instance(e: &Env) {
 }
 
 pub fn bump_balance(e: &Env, addr: &Address) {
-    let key = Key::Balance(addr.clone());
+    let key = UserKey::Balance(addr.clone());
     if e.storage().persistent().has(&key) {
         e.storage()
             .persistent()
@@ -158,9 +148,9 @@ pub fn bump_balance(e: &Env, addr: &Address) {
 #[allow(dead_code)]
 pub fn bump_user_data(e: &Env, addr: &Address, epoch: u32) {
     let epoch_keys = [
-        Key::HasClm(addr.clone(), epoch),
-        Key::UShares(addr.clone(), epoch),
-        Key::USnap(addr.clone(), epoch),
+        EpochKey::HasClaimed(addr.clone(), epoch),
+        EpochKey::UserShares(addr.clone(), epoch),
+        EpochKey::HasSnapshot(addr.clone(), epoch),
     ];
     for key in &epoch_keys {
         if e.storage().persistent().has(key) {
@@ -173,9 +163,9 @@ pub fn bump_user_data(e: &Env, addr: &Address, epoch: u32) {
     }
 
     let addr_keys = [
-        Key::YldClm(addr.clone()),
-        Key::LInter(addr.clone()),
-        Key::LastClm(addr.clone()),
+        UserKey::YieldClaimed(addr.clone()),
+        UserKey::LastInteract(addr.clone()),
+        UserKey::LastClaimed(addr.clone()),
     ];
     for key in &addr_keys {
         if e.storage().persistent().has(key) {
@@ -193,123 +183,138 @@ pub fn bump_user_data(e: &Env, addr: &Address, epoch: u32) {
 // (Admin, config, vault state, epoch counters, pause)
 // ─────────────────────────────────────────────────────────────────────────────
 
-macro_rules! instance_get {
+macro_rules! config_get {
     ($fn:ident, $key:ident, $ty:ty) => {
         pub fn $fn(e: &Env) -> $ty {
-            e.storage().instance().get(&Key::$key).unwrap()
+            e.storage().instance().get(&ConfigKey::$key).unwrap()
         }
     };
 }
-macro_rules! instance_put {
+macro_rules! config_put {
     ($fn:ident, $key:ident, $ty:ty) => {
         pub fn $fn(e: &Env, val: $ty) {
-            e.storage().instance().set(&Key::$key, &val);
+            e.storage().instance().set(&ConfigKey::$key, &val);
+        }
+    };
+}
+
+macro_rules! state_get {
+    ($fn:ident, $key:ident, $ty:ty) => {
+        pub fn $fn(e: &Env) -> $ty {
+            e.storage().instance().get(&StateKey::$key).unwrap()
+        }
+    };
+}
+macro_rules! state_put {
+    ($fn:ident, $key:ident, $ty:ty) => {
+        pub fn $fn(e: &Env, val: $ty) {
+            e.storage().instance().set(&StateKey::$key, &val);
         }
     };
 }
 
 // Share token metadata
-instance_get!(get_share_name, ShName, String);
-instance_put!(put_share_name, ShName, String);
-instance_get!(get_share_symbol, ShSymb, String);
-instance_put!(put_share_symbol, ShSymb, String);
-instance_get!(get_share_decimals, ShDec, u32);
-instance_put!(put_share_decimals, ShDec, u32);
+config_get!(get_share_name, ShName, String);
+config_put!(put_share_name, ShName, String);
+config_get!(get_share_symbol, ShSymb, String);
+config_put!(put_share_symbol, ShSymb, String);
+config_get!(get_share_decimals, ShDec, u32);
+config_put!(put_share_decimals, ShDec, u32);
 
 // Asset
-instance_get!(get_asset, Asset, Address);
-instance_put!(put_asset, Asset, Address);
+config_get!(get_asset, Asset, Address);
+config_put!(put_asset, Asset, Address);
 
 // Admin
-instance_get!(get_admin, Admin, Address);
-instance_put!(put_admin, Admin, Address);
+config_get!(get_admin, Admin, Address);
+config_put!(put_admin, Admin, Address);
 
 // zkMe
-instance_get!(get_zkme_verifier, Verifier, Address);
-instance_put!(put_zkme_verifier, Verifier, Address);
-instance_get!(get_cooperator, Coop, Address);
-instance_put!(put_cooperator, Coop, Address);
+config_get!(get_zkme_verifier, Verifier, Address);
+config_put!(put_zkme_verifier, Verifier, Address);
+config_get!(get_cooperator, Coop, Address);
+config_put!(put_cooperator, Coop, Address);
 
 // RWA
-instance_get!(get_rwa_name, RwaName, String);
-instance_put!(put_rwa_name, RwaName, String);
-instance_get!(get_rwa_symbol, RwaSymb, String);
-instance_put!(put_rwa_symbol, RwaSymb, String);
-instance_get!(get_rwa_document_uri, RwaUri, String);
-instance_put!(put_rwa_document_uri, RwaUri, String);
-instance_get!(get_rwa_category, RwaCat, String);
-instance_put!(put_rwa_category, RwaCat, String);
-instance_get!(get_expected_apy, Apy, u32);
-instance_put!(put_expected_apy, Apy, u32);
+config_get!(get_rwa_name, RwaName, String);
+config_put!(put_rwa_name, RwaName, String);
+config_get!(get_rwa_symbol, RwaSymb, String);
+config_put!(put_rwa_symbol, RwaSymb, String);
+config_get!(get_rwa_document_uri, RwaUri, String);
+config_put!(put_rwa_document_uri, RwaUri, String);
+config_get!(get_rwa_category, RwaCat, String);
+config_put!(put_rwa_category, RwaCat, String);
+config_get!(get_expected_apy, Apy, u32);
+config_put!(put_expected_apy, Apy, u32);
 
 // Config
-instance_get!(get_funding_target, Target, i128);
-instance_put!(put_funding_target, Target, i128);
-instance_get!(get_maturity_date, Maturity, u64);
-instance_put!(put_maturity_date, Maturity, u64);
+config_get!(get_funding_target, Target, i128);
+config_put!(put_funding_target, Target, i128);
+config_get!(get_maturity_date, Maturity, u64);
+config_put!(put_maturity_date, Maturity, u64);
 
 pub fn get_fund_deadline(e: &Env) -> u64 {
     e.storage()
         .instance()
-        .get(&Key::Deadline)
+        .get(&ConfigKey::Deadline)
         .unwrap_or(0)
 }
 pub fn put_fund_deadline(e: &Env, val: u64) {
-    e.storage().instance().set(&Key::Deadline, &val);
+    e.storage().instance().set(&ConfigKey::Deadline, &val);
 }
 
-instance_get!(get_min_deposit, MinDep, i128);
-instance_put!(put_min_deposit, MinDep, i128);
-instance_get!(get_max_user_dep, MaxUser, i128);
-instance_put!(put_max_user_dep, MaxUser, i128);
-instance_get!(get_redem_fee_bps, RedemFee, u32);
-instance_put!(put_redem_fee_bps, RedemFee, u32);
+config_get!(get_min_deposit, MinDep, i128);
+config_put!(put_min_deposit, MinDep, i128);
+config_get!(get_max_user_dep, MaxUser, i128);
+config_put!(put_max_user_dep, MaxUser, i128);
+config_get!(get_redem_fee_bps, RedemFee, u32);
+config_put!(put_redem_fee_bps, RedemFee, u32);
 
 // State
-instance_get!(get_vault_state, State, VaultState);
-instance_put!(put_vault_state, State, VaultState);
-instance_get!(get_paused, Paused, bool);
-instance_put!(put_paused, Paused, bool);
-instance_get!(get_freeze_flags, Flags, u32);
-instance_put!(put_freeze_flags, Flags, u32);
-instance_get!(get_locked, Locked, bool);
-instance_put!(put_locked, Locked, bool);
+state_get!(get_vault_state, State, VaultState);
+state_put!(put_vault_state, State, VaultState);
+state_get!(get_paused, Paused, bool);
+state_put!(put_paused, Paused, bool);
+state_get!(get_freeze_flags, Flags, u32);
+state_put!(put_freeze_flags, Flags, u32);
+state_get!(get_locked, Locked, bool);
+state_put!(put_locked, Locked, bool);
 
 pub fn get_activation_timestamp(e: &Env) -> u64 {
     e.storage()
         .instance()
-        .get(&Key::ActivateTime)
+        .get(&StateKey::ActivateTime)
         .unwrap_or(0)
 }
 pub fn put_activation_timestamp(e: &Env, val: u64) {
     e.storage()
         .instance()
-        .set(&Key::ActivateTime, &val);
+        .set(&StateKey::ActivateTime, &val);
 }
 
 // Epoch / yield (global)
-instance_get!(get_current_epoch, Epoch, u32);
-instance_put!(put_current_epoch, Epoch, u32);
-instance_get!(get_total_yield_distributed, YieldDist, i128);
-instance_put!(put_total_yield_distributed, YieldDist, i128);
+state_get!(get_current_epoch, Epoch, u32);
+state_put!(put_current_epoch, Epoch, u32);
+state_get!(get_total_yield_distributed, YieldDist, i128);
+state_put!(put_total_yield_distributed, YieldDist, i128);
 
 // Supply
-instance_get!(get_total_supply, Supply, i128);
-instance_put!(put_total_supply, Supply, i128);
+state_get!(get_total_supply, Supply, i128);
+state_put!(put_total_supply, Supply, i128);
 
 // TDep (principal tracking)
-instance_get!(get_total_deposited, TDep, i128);
-instance_put!(put_total_deposited, TDep, i128);
+state_get!(get_total_deposited, TDep, i128);
+state_put!(put_total_deposited, TDep, i128);
 
 // RedemCount
-instance_get!(get_redemption_counter, RedemCount, u32);
-instance_put!(put_redemption_counter, RedemCount, u32);
+state_get!(get_redemption_counter, RedemCount, u32);
+state_put!(put_redemption_counter, RedemCount, u32);
 
 // Versioning
-instance_get!(get_contract_version, Ver, u32);
-instance_put!(put_contract_version, Ver, u32);
-instance_get!(get_storage_schema_version, SchemaVersion, u32);
-instance_put!(put_storage_schema_version, SchemaVersion, u32);
+config_get!(get_contract_version, Ver, u32);
+config_put!(put_contract_version, Ver, u32);
+config_get!(get_storage_schema_version, SchemaVersion, u32);
+config_put!(put_storage_schema_version, SchemaVersion, u32);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Operator (instance storage — same lifetime as admin)
@@ -320,22 +325,27 @@ instance_put!(put_storage_schema_version, SchemaVersion, u32);
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Returns `true` when `addr` has been granted `role` in instance storage.
-pub fn get_role(e: &Env, addr: &Address, role: Role) -> bool {
+pub fn has_role(e: &Env, addr: &Address, role: Role) -> bool {
+    if role == Role::FullOperator {
+        let admin = get_admin(e);
+        if &admin == addr {
+            return true;
+        }
+    }
     e.storage()
         .instance()
-        .get(&Key::Role(addr.clone(), role))
+        .get(&UserKey::Role(addr.clone(), role))
         .unwrap_or(false)
 }
 
-/// Grant (`val = true`) or revoke (`val = false`) `role` for `addr`.
-pub fn put_role(e: &Env, addr: Address, role: Role, val: bool) {
-    if val {
-        e.storage()
-            .instance()
-            .set(&Key::Role(addr, role), &true);
-    } else {
-        e.storage().instance().remove(&Key::Role(addr, role));
-    }
+pub fn add_role(e: &Env, addr: Address, role: Role) {
+    e.storage()
+        .instance()
+        .set(&UserKey::Role(addr, role), &true);
+}
+
+pub fn remove_role(e: &Env, addr: Address, role: Role) {
+    e.storage().instance().remove(&UserKey::Role(addr, role));
 }
 
 // ─── Backward-compatible operator wrappers ───────────────────────────────────
@@ -346,57 +356,73 @@ pub fn put_role(e: &Env, addr: Address, role: Role, val: bool) {
 
 /// Returns `true` when `addr` holds the `FullOperator` superrole.
 pub fn get_operator(e: &Env, addr: &Address) -> bool {
-    get_role(e, addr, Role::FullOperator)
+    has_role(e, addr, Role::FullOperator)
 }
 
 /// Grant or revoke the `FullOperator` superrole for `addr`.
 pub fn put_operator(e: &Env, addr: Address, val: bool) {
-    put_role(e, addr, Role::FullOperator, val);
+    if val {
+        add_role(e, addr, Role::FullOperator);
+    } else {
+        remove_role(e, addr, Role::FullOperator);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-epoch data (instance, keyed by epoch number — small integers)
 // ─────────────────────────────────────────────────────────────────────────────
-
+// Epoch yield / share tracking (per epoch)
 pub fn get_epoch_yield(e: &Env, epoch: u32) -> i128 {
     e.storage()
-        .instance()
-        .get(&Key::EpYield(epoch))
+        .persistent()
+        .get(&EpochKey::EpYield(epoch))
         .unwrap_or(0)
 }
 pub fn put_epoch_yield(e: &Env, epoch: u32, val: i128) {
     e.storage()
-        .instance()
-        .set(&Key::EpYield(epoch), &val);
+        .persistent()
+        .set(&EpochKey::EpYield(epoch), &val);
 }
 
-pub fn get_epoch_total_shares(e: &Env, epoch: u32) -> i128 {
+pub fn get_epoch_shares(e: &Env, epoch: u32) -> i128 {
     e.storage()
-        .instance()
-        .get(&Key::EpShares(epoch))
+        .persistent()
+        .get(&EpochKey::EpShares(epoch))
         .unwrap_or(0)
 }
-pub fn put_epoch_total_shares(e: &Env, epoch: u32, val: i128) {
+pub fn put_epoch_shares(e: &Env, epoch: u32, val: i128) {
     e.storage()
-        .instance()
-        .set(&Key::EpShares(epoch), &val);
+        .persistent()
+        .set(&EpochKey::EpShares(epoch), &val);
 }
 
-pub fn get_epoch_timestamp(e: &Env, epoch: u32) -> u64 {
+pub fn get_epoch_time(e: &Env, epoch: u32) -> u64 {
     e.storage()
-        .instance()
-        .get(&Key::EpTime(epoch))
+        .persistent()
+        .get(&EpochKey::EpTime(epoch))
         .unwrap_or(0)
 }
-pub fn put_epoch_timestamp(e: &Env, epoch: u32, val: u64) {
+pub fn put_epoch_time(e: &Env, epoch: u32, val: u64) {
     e.storage()
-        .instance()
-        .set(&Key::EpTime(epoch), &val);
+        .persistent()
+        .set(&EpochKey::EpTime(epoch), &val);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Allow data type
+// Share token balance / allowance (Persistent storage)
 // ─────────────────────────────────────────────────────────────────────────────
+
+pub fn get_balance(e: &Env, addr: &Address) -> i128 {
+    e.storage()
+        .persistent()
+        .get(&UserKey::Balance(addr.clone()))
+        .unwrap_or(0)
+}
+pub fn put_balance(e: &Env, addr: &Address, val: i128) {
+    e.storage()
+        .persistent()
+        .set(&UserKey::Balance(addr.clone()), &val);
+}
 
 /// Persistent allowance record that couples the approved amount with its
 /// expiration ledger, enabling on-chain expiry enforcement (SEP-41 §3.4).
@@ -470,129 +496,135 @@ pub fn put_share_allowance(e: &Env, owner: &Address, spender: &Address, new_amou
 }
 
 /// Stores a fresh allowance with an on-chain `expiration_ledger` and sets the
-/// persistent entry TTL to match, enabling automatic ledger-level cleanup.
-pub fn put_share_allowance_with_expiry(
+pub fn get_allowance(e: &Env, owner: Address, spender: Address) -> AllowData {
+    let key = UserKey::Allow(owner, spender);
+    e.storage()
+        .persistent()
+        .get(&key)
+        .unwrap_or(AllowData {
+            amount: 0,
+            expiration_ledger: 0,
+        })
+}
+
+pub fn put_allowance(
     e: &Env,
-    owner: &Address,
-    spender: &Address,
+    owner: Address,
+    spender: Address,
     amount: i128,
     expiration_ledger: u32,
 ) {
-    let key = Key::Allow(owner.clone(), spender.clone());
-    e.storage().persistent().set(
-        &key,
-        &AllowData {
-            amount,
-            expiration_ledger,
-        },
-    );
-    // Align the persistent TTL with the expiration so Soroban's archival
-    // mechanism cleans up the entry automatically once it expires.
-    let current = e.ledger().sequence();
-    if expiration_ledger >= current {
-        let live_for = expiration_ledger - current + 1;
-        e.storage()
-            .persistent()
-            .extend_ttl(&key, live_for, live_for);
+    if amount > 0 && expiration_ledger < e.ledger().sequence() {
+        panic_with_error!(e, crate::errors::VaultError::InvalidExpiration);
     }
-}
-
-pub fn get_user_deposited(e: &Env, addr: &Address) -> i128 {
-    e.storage()
-        .persistent()
-        .get(&Key::UDep(addr.clone()))
-        .unwrap_or(0)
-}
-pub fn put_user_deposited(e: &Env, addr: &Address, val: i128) {
-    e.storage()
-        .persistent()
-        .set(&Key::UDep(addr.clone()), &val);
+    let key = UserKey::Allow(owner, spender);
+    let val = AllowData {
+        amount,
+        expiration_ledger,
+    };
+    e.storage().persistent().set(&key, &val);
     e.storage().persistent().extend_ttl(
-        &Key::UDep(addr.clone()),
+        &key,
         BALANCE_LIFETIME_THRESHOLD,
         BALANCE_BUMP_AMOUNT,
     );
 }
 
-pub fn get_total_yield_claimed(e: &Env, addr: &Address) -> i128 {
+// ─────────────────────────────────────────────────────────────────────────────
+// User data tracking (Persistent storage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub fn get_user_deposited(e: &Env, addr: &Address) -> i128 {
     e.storage()
         .persistent()
-        .get(&Key::YieldClaimed(addr.clone()))
+        .get(&UserKey::UDep(addr.clone()))
         .unwrap_or(0)
 }
-pub fn put_total_yield_claimed(e: &Env, addr: &Address, val: i128) {
-    let key = Key::YieldClaimed(addr.clone());
+pub fn put_user_deposited(e: &Env, addr: &Address, val: i128) {
+    let key = UserKey::UDep(addr.clone());
     e.storage().persistent().set(&key, &val);
+    e.storage().persistent().extend_ttl(
+        &key,
+        BALANCE_LIFETIME_THRESHOLD,
+        BALANCE_BUMP_AMOUNT,
+    );
+}
+
+// User-specific yield claim status
+pub fn get_yield_claimed(e: &Env, addr: &Address) -> i128 {
     e.storage()
         .persistent()
-        .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
+        .get(&UserKey::YieldClaimed(addr.clone()))
+        .unwrap_or(0)
+}
+pub fn put_yield_claimed(e: &Env, addr: &Address, val: i128) {
+    e.storage()
+        .persistent()
+        .set(&UserKey::YieldClaimed(addr.clone()), &val);
+}
+
+pub fn get_has_claimed(e: &Env, addr: &Address, epoch: u32) -> bool {
+    e.storage()
+        .persistent()
+        .get(&EpochKey::HasClaimed(addr.clone(), epoch))
+        .unwrap_or(false)
+}
+pub fn put_has_claimed(e: &Env, addr: &Address, epoch: u32, val: bool) {
+    let key = EpochKey::HasClaimed(addr.clone(), epoch);
+    e.storage().persistent().set(&key, &val);
+}
+
+pub fn get_user_total_claimed(e: &Env, addr: &Address) -> i128 {
+    e.storage()
+        .persistent()
+        .get(&UserKey::YieldClaimed(addr.clone()))
+        .unwrap_or(0)
 }
 
 pub fn get_last_claimed_epoch(e: &Env, addr: &Address) -> u32 {
     e.storage()
         .persistent()
-        .get(&Key::LastClaimed(addr.clone()))
+        .get(&UserKey::LastClaimed(addr.clone()))
         .unwrap_or(0)
 }
-pub fn put_last_claimed_epoch(e: &Env, addr: &Address, val: u32) {
-    let key = Key::LastClaimed(addr.clone());
-    e.storage().persistent().set(&key, &val);
+pub fn put_last_claimed_epoch(e: &Env, addr: &Address, epoch: u32) {
     e.storage()
         .persistent()
-        .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
+        .set(&UserKey::LastClaimed(addr.clone()), &epoch);
 }
 
-pub fn get_has_claimed_epoch(e: &Env, addr: &Address, epoch: u32) -> bool {
+// User share snapshots (per epoch)
+pub fn get_user_shares(e: &Env, addr: &Address, epoch: u32) -> i128 {
     e.storage()
         .persistent()
-        .get(&Key::HasClaimed(addr.clone(), epoch))
+        .get(&EpochKey::UserShares(addr.clone(), epoch))
+        .unwrap_or(0)
+}
+pub fn put_user_shares(e: &Env, addr: &Address, epoch: u32, val: i128) {
+    let key = EpochKey::UserShares(addr.clone(), epoch);
+    e.storage().persistent().set(&key, &val);
+}
+
+pub fn get_user_has_snapshot(e: &Env, addr: &Address, epoch: u32) -> bool {
+    e.storage()
+        .persistent()
+        .get(&EpochKey::HasSnapshot(addr.clone(), epoch))
         .unwrap_or(false)
 }
-pub fn put_has_claimed_epoch(e: &Env, addr: &Address, epoch: u32, val: bool) {
-    let key = Key::HasClaimed(addr.clone(), epoch);
+pub fn put_user_has_snapshot(e: &Env, addr: &Address, epoch: u32, val: bool) {
+    let key = EpochKey::HasSnapshot(addr.clone(), epoch);
     e.storage().persistent().set(&key, &val);
-    e.storage()
-        .persistent()
-        .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
 }
 
-pub fn get_user_shares_at_epoch(e: &Env, addr: &Address, epoch: u32) -> i128 {
+pub fn get_last_interact_epoch(e: &Env, addr: &Address) -> u32 {
     e.storage()
         .persistent()
-        .get(&Key::UserShares(addr.clone(), epoch))
+        .get(&UserKey::LastInteract(addr.clone()))
         .unwrap_or(0)
 }
-pub fn put_user_shares_at_epoch(e: &Env, addr: &Address, epoch: u32, val: i128) {
-    let key = Key::UserShares(addr.clone(), epoch);
-    e.storage().persistent().set(&key, &val);
-    e.storage()
-        .persistent()
-        .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
-}
-
-pub fn get_has_snapshot_for_epoch(e: &Env, addr: &Address, epoch: u32) -> bool {
-    e.storage()
-        .persistent()
-        .get(&Key::HasSnapshot(addr.clone(), epoch))
-        .unwrap_or(false)
-}
-pub fn put_has_snapshot_for_epoch(e: &Env, addr: &Address, epoch: u32, val: bool) {
-    let key = Key::HasSnapshot(addr.clone(), epoch);
-    e.storage().persistent().set(&key, &val);
-    e.storage()
-        .persistent()
-        .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
-}
-
-pub fn get_last_interaction_epoch(e: &Env, addr: &Address) -> u32 {
-    e.storage()
-        .persistent()
-        .get(&Key::LastInteract(addr.clone()))
-        .unwrap_or(0)
-}
-pub fn put_last_interaction_epoch(e: &Env, addr: &Address, val: u32) {
-    let key = Key::LastInteract(addr.clone());
-    e.storage().persistent().set(&key, &val);
+pub fn put_last_interact_epoch(e: &Env, addr: &Address, epoch: u32) {
+    let key = UserKey::LastInteract(addr.clone());
+    e.storage().persistent().set(&key, &epoch);
     e.storage()
         .persistent()
         .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
@@ -605,15 +637,16 @@ pub fn put_last_interaction_epoch(e: &Env, addr: &Address, val: u32) {
 pub fn get_redemption_request(e: &Env, id: u32) -> RedemRequest {
     e.storage()
         .persistent()
-        .get(&Key::RedemReq(id))
+        .get(&ProposalKey::RedemReq(id))
         .unwrap_or_else(|| panic_with_error!(e, Error::InvalidRedemptionRequest))
 }
+
 pub fn put_redemption_request(e: &Env, id: u32, req: RedemRequest) {
     e.storage()
         .persistent()
-        .set(&Key::RedemReq(id), &req);
+        .set(&ProposalKey::RedemReq(id), &req);
     e.storage().persistent().extend_ttl(
-        &Key::RedemReq(id),
+        &ProposalKey::RedemReq(id),
         BALANCE_LIFETIME_THRESHOLD,
         BALANCE_BUMP_AMOUNT,
     );
@@ -622,12 +655,12 @@ pub fn put_redemption_request(e: &Env, id: u32, req: RedemRequest) {
 pub fn get_escrowed_shares(e: &Env, addr: &Address) -> i128 {
     e.storage()
         .persistent()
-        .get(&Key::EscrowShares(addr.clone()))
+        .get(&UserKey::EscrowShares(addr.clone()))
         .unwrap_or(0)
 }
 
 pub fn put_escrowed_shares(e: &Env, addr: &Address, amount: i128) {
-    let key = Key::EscrowShares(addr.clone());
+    let key = UserKey::EscrowShares(addr.clone());
     e.storage().persistent().set(&key, &amount);
     e.storage()
         .persistent()
@@ -644,14 +677,14 @@ pub fn put_escrowed_shares(e: &Env, addr: &Address, amount: i128) {
 pub fn get_transfer_requires_kyc(e: &Env) -> bool {
     e.storage()
         .instance()
-        .get(&Key::TransferKyc)
+        .get(&StateKey::TransferKyc)
         .unwrap_or(true)
 }
 
 pub fn put_transfer_requires_kyc(e: &Env, val: bool) {
     e.storage()
         .instance()
-        .set(&Key::TransferKyc, &val);
+        .set(&StateKey::TransferKyc, &val);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -661,16 +694,16 @@ pub fn put_transfer_requires_kyc(e: &Env, val: bool) {
 pub fn get_blacklisted(e: &Env, addr: &Address) -> bool {
     e.storage()
         .persistent()
-        .get(&Key::BList(addr.clone()))
+        .get(&UserKey::BList(addr.clone()))
         .unwrap_or(false)
 }
 
 pub fn put_blacklisted(e: &Env, addr: &Address, status: bool) {
     e.storage()
         .persistent()
-        .set(&Key::BList(addr.clone()), &status);
+        .set(&UserKey::BList(addr.clone()), &status);
     e.storage().persistent().extend_ttl(
-        &Key::BList(addr.clone()),
+        &UserKey::BList(addr.clone()),
         BALANCE_LIFETIME_THRESHOLD,
         BALANCE_BUMP_AMOUNT,
     );
@@ -683,36 +716,36 @@ pub fn put_blacklisted(e: &Env, addr: &Address, status: bool) {
 pub fn get_emergency_balance(e: &Env) -> i128 {
     e.storage()
         .instance()
-        .get(&Key::EmergBalance)
+        .get(&StateKey::EmergBalance)
         .unwrap_or(0)
 }
 
 pub fn put_emergency_balance(e: &Env, val: i128) {
-    e.storage().instance().set(&Key::EmergBalance, &val);
+    e.storage().instance().set(&StateKey::EmergBalance, &val);
 }
 
 pub fn get_emergency_total_supply_snapshot(e: &Env) -> i128 {
     e.storage()
         .instance()
-        .get(&Key::EmTotalSupSnap)
+        .get(&StateKey::EmTotalSupSnap)
         .unwrap_or(0)
 }
 
 pub fn put_emergency_total_supply_snapshot(e: &Env, val: i128) {
     e.storage()
         .instance()
-        .set(&Key::EmTotalSupSnap, &val);
+        .set(&StateKey::EmTotalSupSnap, &val);
 }
 
 pub fn get_has_claimed_emergency(e: &Env, addr: &Address) -> bool {
     e.storage()
         .persistent()
-        .get(&Key::HasClaimEmerg(addr.clone()))
+        .get(&UserKey::HasClaimEmerg(addr.clone()))
         .unwrap_or(false)
 }
 
 pub fn put_has_claimed_emergency(e: &Env, addr: &Address, val: bool) {
-    let key = Key::HasClaimEmerg(addr.clone());
+    let key = UserKey::HasClaimEmerg(addr.clone());
     e.storage().persistent().set(&key, &val);
     e.storage()
         .persistent()
@@ -725,72 +758,72 @@ pub fn put_has_claimed_emergency(e: &Env, addr: &Address, val: bool) {
 
 /// Returns true when a signer set has been configured via `set_emergency_signers`.
 pub fn has_emergency_signers(e: &Env) -> bool {
-    e.storage().instance().has(&Key::EmSigners)
+    e.storage().instance().has(&ConfigKey::EmSigners)
 }
 
 pub fn get_emergency_signers(e: &Env) -> Vec<Address> {
     e.storage()
         .instance()
-        .get(&Key::EmSigners)
+        .get(&ConfigKey::EmSigners)
         .unwrap()
 }
 
 pub fn put_emergency_signers(e: &Env, signers: Vec<Address>) {
     e.storage()
         .instance()
-        .set(&Key::EmSigners, &signers);
+        .set(&ConfigKey::EmSigners, &signers);
 }
 
 pub fn get_emergency_threshold(e: &Env) -> u32 {
     e.storage()
         .instance()
-        .get(&Key::EmThreshold)
+        .get(&ConfigKey::EmThreshold)
         .unwrap_or(0)
 }
 
 pub fn put_emergency_threshold(e: &Env, threshold: u32) {
     e.storage()
         .instance()
-        .set(&Key::EmThreshold, &threshold);
+        .set(&ConfigKey::EmThreshold, &threshold);
 }
 
 pub fn get_emergency_proposal_counter(e: &Env) -> u32 {
     e.storage()
         .instance()
-        .get(&Key::EmPropCount)
+        .get(&StateKey::EmPropCount)
         .unwrap_or(0)
 }
 
 pub fn put_emergency_proposal_counter(e: &Env, val: u32) {
     e.storage()
         .instance()
-        .set(&Key::EmPropCount, &val);
+        .set(&StateKey::EmPropCount, &val);
 }
 
-pub fn get_emergency_proposal(e: &Env, id: u32) -> Option<EProp> {
+pub fn get_emergency_proposal(e: &Env, id: u32) -> Option<EmergProposal> {
     e.storage()
         .persistent()
-        .get(&Key::EmergProp(id))
+        .get(&ProposalKey::EmergProp(id))
 }
 
-pub fn put_emergency_proposal(e: &Env, id: u32, proposal: EProp) {
-    let key = Key::EmergProp(id);
-    e.storage().persistent().set(&key, &proposal);
+pub fn put_emergency_proposal(e: &Env, id: u32, prop: &EmergProposal) {
+    let key = ProposalKey::EmergProp(id);
+    e.storage().persistent().set(&key, prop);
     e.storage()
         .persistent()
         .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);
 }
 
-pub fn get_emerg_approvals(e: &Env, id: u32) -> Vec<Address> {
+pub fn get_emergency_proposal_approval(e: &Env, id: u32) -> Vec<Address> {
     e.storage()
         .persistent()
-        .get(&Key::EPAppr(id))
+        .get(&ProposalKey::EPAppr(id))
         .unwrap_or_else(|| Vec::new(e))
 }
 
-pub fn put_emergency_proposal_approvals(e: &Env, id: u32, approvals: Vec<Address>) {
-    let key = Key::EPAppr(id);
-    e.storage().persistent().set(&key, &approvals);
+pub fn put_emergency_proposal_approval(e: &Env, id: u32, signers: Vec<Address>) {
+    let key = ProposalKey::EPAppr(id);
+    e.storage().persistent().set(&key, &signers);
     e.storage()
         .persistent()
         .extend_ttl(&key, BALANCE_LIFETIME_THRESHOLD, BALANCE_BUMP_AMOUNT);

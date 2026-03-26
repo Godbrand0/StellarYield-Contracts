@@ -47,44 +47,6 @@ fn setup_factory(
         ),
     );
 
-mod single_rwa_vault {
-    soroban_sdk::contractimport!(
-        file = "../../target/wasm32-unknown-unknown/release/single_rwa_vault.wasm"
-    );
-}
-
-const VAULT_WASM: &[u8] =
-    include_bytes!("../../../target/wasm32-unknown-unknown/release/single_rwa_vault.wasm");
-
-fn setup_factory(
-    e: &Env,
-) -> (
-    VaultFactoryClient<'_>,
-    Address,
-    Address,
-    Address,
-    Address,
-    BytesN<32>,
-) {
-    let admin = Address::generate(e);
-    let asset = Address::generate(e);
-    let zkme = Address::generate(e);
-    let coop = Address::generate(e);
-
-    // Upload the vault WASM
-    let vault_wasm_hash = e.deployer().upload_contract_wasm(VAULT_WASM);
-
-    let factory_id = e.register(
-        VaultFactory,
-        (
-            admin.clone(),
-            asset.clone(),
-            zkme.clone(),
-            coop.clone(),
-            vault_wasm_hash.clone(),
-        ),
-    );
-
     (
         VaultFactoryClient::new(e, &factory_id),
         admin,
