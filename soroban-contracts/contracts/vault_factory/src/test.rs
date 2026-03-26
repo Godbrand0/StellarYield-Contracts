@@ -47,6 +47,44 @@ fn setup_factory(
         ),
     );
 
+mod single_rwa_vault {
+    soroban_sdk::contractimport!(
+        file = "../../target/wasm32-unknown-unknown/release/single_rwa_vault.wasm"
+    );
+}
+
+const VAULT_WASM: &[u8] =
+    include_bytes!("../../../target/wasm32-unknown-unknown/release/single_rwa_vault.wasm");
+
+fn setup_factory(
+    e: &Env,
+) -> (
+    VaultFactoryClient<'_>,
+    Address,
+    Address,
+    Address,
+    Address,
+    BytesN<32>,
+) {
+    let admin = Address::generate(e);
+    let asset = Address::generate(e);
+    let zkme = Address::generate(e);
+    let coop = Address::generate(e);
+
+    // Upload the vault WASM
+    let vault_wasm_hash = e.deployer().upload_contract_wasm(VAULT_WASM);
+
+    let factory_id = e.register(
+        VaultFactory,
+        (
+            admin.clone(),
+            asset.clone(),
+            zkme.clone(),
+            coop.clone(),
+            vault_wasm_hash.clone(),
+        ),
+    );
+
     (
         VaultFactoryClient::new(e, &factory_id),
         admin,
@@ -240,7 +278,86 @@ fn test_get_active_vaults_filters_inactive() {
 }
 */
 
-// Some constructor and error-path factory tests removed per request
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_create_vault_non_operator_panics() {
+    let e = Env::default();
+    e.mock_all_auths();
+    let (client, _, asset, _, _, _) = setup_factory(&e);
+
+    let rando = Address::generate(&e);
+    client.create_single_rwa_vault(
+        &rando,
+        &asset,
+        &String::from_str(&e, "Panic"),
+        &String::from_str(&e, "P"),
+        &String::from_str(&e, ""),
+        &String::from_str(&e, ""),
+        &String::from_str(&e, ""),
+        &0,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Aggregator vault not supported")]
+fn test_create_aggregator_vault_panics() {
+    let e = Env::default();
+    e.mock_all_auths();
+    let (client, admin, asset, _, _, _) = setup_factory(&e);
+
+    client.create_aggregator_vault(
+        &admin,
+        &asset,
+        &String::from_str(&e, "No"),
+        &String::from_str(&e, "N"),
+    );
+}
+
+// Full Lifecycle Integration Test
+#[test]
+fn test_full_vault_lifecycle_end_to_end() {
+    let e = Env::default();
+    e.mock_all_auths();
+
+    let (factory, admin, _asset_id, _zkme_id, _coop_id, _) = setup_factory(&e);
+
+    // Deploy mock USDC token
+    let usdc_id = e.register(IntegrationMockUsdc, ());
+    let usdc = integration_test_mocks::IntegrationMockUsdcClient::new(&e, &usdc_id);
+
+    // Deploy mock zkMe verifier
+    let kyc_id = e.register(IntegrationMockZkme, ());
+    let kyc = integration_test_mocks::IntegrationMockZkmeClient::new(&e, &kyc_id);
+
+    let maturity_date = e.ledger().timestamp() + 365 * 24 * 60 * 60; // 1 year from now
+    let funding_deadline = e.ledger().timestamp() + 30 * 24 * 60 * 60; // 30 days from now
+
+    let vault_params = BatchVaultParams {
+        asset: usdc_id.clone(),
+        name: String::from_str(&e, "Integration Test Vault"),
+        symbol: String::from_str(&e, "ITV"),
+        rwa_name: String::from_str(&e, "US Treasury Bond"),
+        rwa_symbol: String::from_str(&e, "USTB"),
+        rwa_document_uri: String::from_str(&e, "https://example.com/ustb"),
+        rwa_category: String::from_str(&e, "Government Bond"),
+        expected_apy: 500u32, // 5%
+        maturity_date,
+        funding_deadline,
+        funding_target: 300_000_000i128, // 300 USDC (6 decimals)
+        min_deposit: 10_000_000i128,     // 10 USDC
+        max_deposit_per_user: 200_000_000i128, // 200 USDC
+        early_redemption_fee_bps: 200u32, // 2%
+    };
+
+    let vault_addr = factory.create_single_rwa_vault_full(&admin, &vault_params);
+    let vault = single_rwa_vault::Client::new(&e, &vault_addr);
+
+    // Verify vault is registered
+    assert!(factory.is_registered_vault(&vault_addr));
+
+    let user_a = Address::generate(&e);
+    let user_b = Address::generate(&e);
+    let user_c = Address::generate(&e);
 
     let rando = Address::generate(&e);
     client.create_single_rwa_vault(

@@ -1,6 +1,8 @@
 extern crate std;
 
-use soroban_sdk::Address;
+use soroban_sdk::{
+    Address,
+};
 
 use crate::test_helpers::{mint_usdc, setup, TestContext};
 
