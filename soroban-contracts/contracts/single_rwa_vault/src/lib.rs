@@ -1673,7 +1673,7 @@ impl SingleRWAVault {
             return get_expected_apy(e);
         }
         const SECONDS_PER_YEAR: u64 = 31_536_000;
-        let numerator = (ytd as i128)
+        let numerator = ytd
             .checked_mul(SECONDS_PER_YEAR as i128)
             .and_then(|v| v.checked_mul(10000))
             .unwrap_or(i128::MAX);
