@@ -2,7 +2,7 @@
 //!
 //! Each function mirrors an EVM event from ISingleRWA_Vault.sol.
 
-use soroban_sdk::{symbol_short, Address, Env, String};
+use soroban_sdk::{symbol_short, Address, Env, String, Symbol};
 
 use crate::types::{Role, VaultState};
 
@@ -28,8 +28,9 @@ pub fn emit_vault_state_changed(e: &Env, old: VaultState, new: VaultState) {
     e.events().publish((symbol_short!("st_chg"),), (old, new));
 }
 
-pub fn emit_maturity_date_set(e: &Env, timestamp: u64) {
-    e.events().publish((symbol_short!("mat_set"),), timestamp);
+pub fn emit_maturity_date_set(e: &Env, old: u64, new: u64, state: VaultState) {
+    e.events()
+        .publish((symbol_short!("mat_set"),), (old, new, state));
 }
 
 pub fn emit_deposit_limits_updated(e: &Env, min: i128, max: i128) {
@@ -121,22 +122,72 @@ pub fn emit_redeem_at_maturity(
     );
 }
 
+/// Which early-redemption user event to emit (same topics/data layout for all variants).
+#[derive(Copy, Clone)]
+enum EarlyRedemptionUserEventKind {
+    Requested,
+    Processed,
+    Cancelled,
+}
+
+/// Common early-redemption event layout: topics `(tag, user)`, data `(request_id, amount)`.
+///
+/// Each `symbol_short!` lives in a `match` arm so topic symbols stay compile-time literals
+/// (a single `publish` with a `Symbol` parameter is rejected by the Soroban host).
+fn publish_early_redemption_user_event(
+    e: &Env,
+    kind: EarlyRedemptionUserEventKind,
+    user: Address,
+    request_id: u32,
+    amount: i128,
+) {
+    match kind {
+        EarlyRedemptionUserEventKind::Requested => {
+            e.events()
+                .publish((symbol_short!("erq_req"), user), (request_id, amount));
+        }
+        EarlyRedemptionUserEventKind::Processed => {
+            e.events()
+                .publish((symbol_short!("erq_done"), user), (request_id, amount));
+        }
+        EarlyRedemptionUserEventKind::Cancelled => {
+            e.events()
+                .publish((symbol_short!("erq_can"), user), (request_id, amount));
+        }
+    }
+}
+
 /// Emitted by `request_early_redemption`.
 pub fn emit_early_redemption_requested(e: &Env, user: Address, request_id: u32, shares: i128) {
-    e.events()
-        .publish((symbol_short!("erq_req"), user), (request_id, shares));
+    publish_early_redemption_user_event(
+        e,
+        EarlyRedemptionUserEventKind::Requested,
+        user,
+        request_id,
+        shares,
+    );
 }
 
 /// Emitted by `process_early_redemption`.
 pub fn emit_early_redemption_processed(e: &Env, user: Address, request_id: u32, net_assets: i128) {
-    e.events()
-        .publish((symbol_short!("erq_done"), user), (request_id, net_assets));
+    publish_early_redemption_user_event(
+        e,
+        EarlyRedemptionUserEventKind::Processed,
+        user,
+        request_id,
+        net_assets,
+    );
 }
 
 /// Emitted by `cancel_early_redemption`.
 pub fn emit_early_redemption_cancelled(e: &Env, user: Address, request_id: u32, shares: i128) {
-    e.events()
-        .publish((symbol_short!("erq_can"), user), (request_id, shares));
+    publish_early_redemption_user_event(
+        e,
+        EarlyRedemptionUserEventKind::Cancelled,
+        user,
+        request_id,
+        shares,
+    );
 }
 
 /// Emitted by `transfer_admin`.
@@ -165,15 +216,29 @@ pub fn emit_early_redemption_fee_set(e: &Env, fee_bps: u32) {
     e.events().publish((symbol_short!("fee_set"),), fee_bps);
 }
 
-/// Emitted by `set_funding_target`.
-pub fn emit_funding_target_set(e: &Env, target: i128) {
-    e.events().publish((symbol_short!("fund_set"),), target);
+pub fn emit_yield_vesting_period_set(e: &Env, vesting_period: u64) {
+    e.events()
+        .publish((symbol_short!("vest_set"),), vesting_period);
+}
+
+/// Emitted by `set_funding_target` / `set_funding_target_with_reason`.
+///
+/// `reason` is a short operator-provided context string (may be empty).
+pub fn emit_funding_target_set(e: &Env, target: i128, reason: String) {
+    e.events()
+        .publish((symbol_short!("fund_set"),), (target, reason));
 }
 
 /// Emitted by `set_blacklisted`.
 pub fn emit_address_blacklisted(e: &Env, address: Address, status: bool) {
     e.events()
         .publish((symbol_short!("blacklist"), address), status);
+}
+
+/// Emitted by `set_transfer_exempt`.
+pub fn emit_transfer_exemption_set(e: &Env, address: Address, exempt: bool) {
+    e.events()
+        .publish((symbol_short!("xfer_exm"), address), exempt);
 }
 
 /// Emitted by `cancel_funding` — vault moved to Cancelled state.
@@ -204,4 +269,58 @@ pub fn emit_emergency_claimed(e: &Env, user: Address, amount: i128) {
 pub fn emit_data_migrated(e: &Env, old_version: u32, new_version: u32) {
     e.events()
         .publish((symbol_short!("data_mig"), old_version, new_version), ());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Timelock events
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Emitted when a timelock action is proposed.
+pub fn emit_action_proposed(
+    e: &Env,
+    action_id: u32,
+    action_type: crate::types::ActionType,
+    executable_at: u64,
+) {
+    e.events().publish(
+        (symbol_short!("act_prp"), action_id),
+        (action_type, executable_at),
+    );
+}
+
+/// Emitted when a timelock action is executed.
+#[allow(dead_code)]
+pub fn emit_action_executed(e: &Env, action_id: u32, action_type: crate::types::ActionType) {
+    e.events()
+        .publish((symbol_short!("act_exec"), action_id), action_type);
+}
+
+/// Emitted when a timelock action is cancelled.
+pub fn emit_action_cancelled(e: &Env, action_id: u32, action_type: crate::types::ActionType) {
+    e.events()
+        .publish((symbol_short!("act_canc"), action_id), action_type);
+}
+
+/// Emitted by `propose_emergency_withdraw` — a new multi-sig proposal was created.
+pub fn emit_emergency_proposed(e: &Env, proposal_id: u32, proposer: Address, recipient: Address) {
+    e.events().publish(
+        (symbol_short!("emg_prop"), proposal_id),
+        (proposer, recipient),
+    );
+}
+
+/// Emitted by `approve_emergency_withdraw` — a signer approved a proposal.
+pub fn emit_emergency_approved(e: &Env, proposal_id: u32, approver: Address, approval_count: u32) {
+    e.events().publish(
+        (symbol_short!("emg_appr"), proposal_id),
+        (approver, approval_count),
+    );
+}
+
+/// Emitted by `execute_emergency_withdraw` — the multi-sig withdrawal was executed.
+pub fn emit_emergency_executed(e: &Env, proposal_id: u32, recipient: Address, amount: i128) {
+    e.events().publish(
+        (symbol_short!("emg_exec"), proposal_id),
+        (recipient, amount),
+    );
 }

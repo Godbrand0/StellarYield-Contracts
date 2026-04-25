@@ -3,7 +3,9 @@
 //! Verifies the state machine: Funding -> Active -> Matured.
 //! Transitions require preconditions (funding target, maturity date) and guards (operator-only).
 
-use crate::test_helpers::{advance_time, mint_usdc, setup_with_kyc_bypass};
+use crate::test_helpers::{
+    advance_time, create_user_with_balance, mint_usdc, setup_with_kyc_bypass,
+};
 use crate::VaultState;
 use soroban_sdk::testutils::Ledger;
 
@@ -22,8 +24,8 @@ fn test_activate_vault_transitions_to_active() {
 
     // 2. Meet funding target (100 USDC in default_params)
     let amount = 100_000_000i128;
-    mint_usdc(&ctx.env, &ctx.asset_id, &ctx.user, amount);
-    v.deposit(&ctx.user, &amount, &ctx.user);
+    let user_a = create_user_with_balance(&ctx, amount);
+    v.deposit(&user_a, &amount, &user_a);
 
     assert!(v.is_funding_target_met());
 
@@ -54,6 +56,70 @@ fn test_mature_vault_transitions_to_matured() {
 
     // 4. Verify state
     assert_eq!(v.vault_state(), VaultState::Matured);
+}
+
+#[test]
+fn test_exact_funding_target_met_and_activated() {
+    let ctx = setup_with_kyc_bypass();
+    let v = ctx.vault();
+
+    let target = v.funding_target();
+
+    // User deposits exactly the target
+    let user_exact = create_user_with_balance(&ctx, target);
+    v.deposit(&user_exact, &target, &user_exact);
+
+    // Target exactly met, activate the vault
+    v.activate_vault(&ctx.operator);
+
+    // Verify final state and balances
+    assert_eq!(v.vault_state(), VaultState::Active);
+    assert_eq!(v.balance(&user_exact), target);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boundary: timestamp == maturity_date (#173)
+// Contract: mature_vault requires `now >= maturity_date` (`now < maturity` panics).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// When `ledger.timestamp == maturity_date`, `mature_vault` succeeds (maturity is reached).
+#[test]
+fn test_mature_vault_succeeds_at_exact_maturity_timestamp() {
+    let ctx = setup_with_kyc_bypass();
+    let v = ctx.vault();
+
+    let amount = 100_000_000i128;
+    mint_usdc(&ctx.env, &ctx.asset_id, &ctx.user, amount);
+    v.deposit(&ctx.user, &amount, &ctx.user);
+    v.activate_vault(&ctx.operator);
+
+    let maturity = 5_000_000u64;
+    v.set_maturity_date(&ctx.operator, &maturity);
+
+    ctx.env.ledger().with_mut(|li| li.timestamp = maturity);
+    assert_eq!(ctx.env.ledger().timestamp(), maturity);
+
+    v.mature_vault(&ctx.operator);
+    assert_eq!(v.vault_state(), VaultState::Matured);
+}
+
+/// One second before `maturity_date`, `mature_vault` still fails with `Error::NotMatured`.
+#[test]
+#[should_panic(expected = "HostError: Error(Contract, #8)")]
+fn test_mature_vault_fails_just_before_maturity() {
+    let ctx = setup_with_kyc_bypass();
+    let v = ctx.vault();
+
+    let amount = 100_000_000i128;
+    mint_usdc(&ctx.env, &ctx.asset_id, &ctx.user, amount);
+    v.deposit(&ctx.user, &amount, &ctx.user);
+    v.activate_vault(&ctx.operator);
+
+    let maturity = 5_000_000u64;
+    v.set_maturity_date(&ctx.operator, &maturity);
+
+    ctx.env.ledger().with_mut(|li| li.timestamp = maturity - 1);
+    v.mature_vault(&ctx.operator);
 }
 
 #[test]
