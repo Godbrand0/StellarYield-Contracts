@@ -1269,7 +1269,7 @@ impl SingleRWAVault {
             return 0;
         }
         let bps = math::mul_div(e, assets, 10_000, target);
-        bps.min(10_000).max(0) as u32
+        bps.clamp(0, 10_000) as u32
     }
 
     pub fn is_funding_target_met(e: &Env) -> bool {
