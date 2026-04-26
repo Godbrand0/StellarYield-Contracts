@@ -132,9 +132,8 @@ pub struct RedemptionRequest {
     pub locked_asset_value: i128,
 }
 
-<<<<<<< HEAD
 // ─────────────────────────────────────────────────────────────────────────────
-// CanRedeemResult struct (returned by can_redeem)
+// CanRedeemResult struct (returned by can_redeem) - Task #360
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[contracttype]
@@ -145,7 +144,7 @@ pub struct CanRedeemResult {
     /// Optional reason string if redemption is not possible.
     pub reason: Option<String>,
 }
-=======
+
 /// Statistics about the pending redemption queue.
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -208,6 +207,8 @@ pub struct RedemptionPreflight {
     pub assets_out: i128,
     pub can_redeem: bool,
     pub reason: String,
+}
+
 /// Composite epoch metadata for efficient indexer queries.
 /// Returns yield, total shares, and timestamp in a single call.
 #[contracttype]
@@ -435,4 +436,3 @@ pub const INTERFACE_RBAC: u32 = 5;
 pub const INTERFACE_TIMELOCK: u32 = 6;
 pub const INTERFACE_EMERGENCY: u32 = 7;
 pub const INTERFACE_ACTIVITY_TRACKING: u32 = 8;
->>>>>>> main

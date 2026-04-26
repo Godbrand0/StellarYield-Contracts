@@ -846,10 +846,10 @@ impl SingleRWAVault {
 
         // Validate inputs
         if users.len() != shares.len() {
-            panic_with_error!(e, Error::InvalidInput);
+            panic_with_error!(e, Error::InvalidInitParams);
         }
         if users.len() > MAX_BATCH_SIZE {
-            panic_with_error!(e, Error::InvalidInput);
+            panic_with_error!(e, Error::InvalidInitParams);
         }
 
         let mut results: Vec<RedemptionPreflight> = Vec::new(e);
@@ -902,6 +902,11 @@ impl SingleRWAVault {
                 can_redeem,
                 reason,
             });
+        }
+
+        results
+    }
+
     /// Batched deposit preflight check (bounded to avoid expensive calls).
     /// Returns per-user deposit validation results with status codes and expected shares.
     /// Max batch size: 50 entries per call.
@@ -3779,3 +3784,4 @@ mod test {
         client.deposit(&depositor, &10_0000000, &depositor);
     }
 }
+
